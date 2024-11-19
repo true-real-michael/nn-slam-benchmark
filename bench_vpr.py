@@ -27,7 +27,7 @@ test_ds_name = "satellite"
 test_ds = Data(Path("datasets"), test_ds_name, limit=LIMIT, gt=False)
 queries = Queries(
     Path("datasets"),
-    "satellite",
+    test_ds_name,
     knn=None,
     limit=LIMIT
 )
@@ -54,26 +54,19 @@ vpr_measurements = {}
 
 for vpr_system_name, (method, args) in vpr_systems.items():
     print('Processing', vpr_system_name)
-    index = avl.FaissSearcher()
+    file_path = f'index_{test_ds_name}_{vpr_system_name}.pkl'
     vpr_system = method(*args)
-    create_index(test_ds, vpr_system, index)
+    if Path(file_path).exists():
+        with open(file_path, 'rb') as f:
+            index = pickle.load(f)
+    else:
+        index = avl.FaissSearcher()
+        create_index(test_ds, vpr_system, index)
+        with open(file_path, 'wb') as f:
+            pickle.dump(index, f)
     vpr_measurements[vpr_system_name] = benchmark_vpr_system(queries, vpr_system, index, 10)
     del vpr_system, index
 
 
-for name, (method, args) in vpr_systems.items():
-    extractor = method(*args)
-    retrieval_system = RetrievalSystem(extractor, test_ds, matcher, index_searcher)
-    homography_estimator = avl.HomographyEstimator()
-    localization_pipeline = avl.LocalizationPipeline(retrieval_system, homography_estimator)
-
-    # recall_value = avl.reference_recall(
-    #     queries, localization_pipeline, k_closest=10, threshold=100
-    # )
-    predictions = localization_pipeline.process_all(queries, k_closest=10)
-
-
-    vpr_measurements[name] = retrieval_system.get_time_measurements()
-
-with open('satellite_vpr.pkl', 'wb') as f:
+with open(f'{test_ds_name}_vpr.pkl', 'wb') as f:
     pickle.dump(vpr_measurements, f)
