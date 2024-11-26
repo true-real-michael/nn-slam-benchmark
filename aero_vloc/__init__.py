@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from aero_vloc.dataset import Data, Queries
-from aero_vloc.feature_matchers import LightGlue, SelaLocal, SuperGlue
+from aero_vloc.feature_matchers import LightGlue, LighterGlue, SelaLocal, SuperGlue
 from aero_vloc.homography_estimator import HomographyEstimator
 from aero_vloc.index_searchers import FaissSearcher
 from aero_vloc.localization_pipeline import LocalizationPipeline
