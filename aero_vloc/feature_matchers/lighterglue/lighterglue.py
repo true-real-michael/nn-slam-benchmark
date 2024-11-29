@@ -9,7 +9,6 @@ class LighterGlue(FeatureMatcher):
         super().__init__(resize, gpu_index)
         self.xfeat = torch.hub.load('verlab/accelerated_features', 'XFeat', pretrained = True, top_k = 4096)
 
-
     def match_feature(self, query_features, db_features, k_best):
         num_matches = []
         matched_kpts_query = []
@@ -26,9 +25,8 @@ class LighterGlue(FeatureMatcher):
                 for k, v in db_feature.items()
             }
             matches = self.xfeat.match_lighterglue(
-                query_features, query_features
-            )
-            matches = matches["matches"][0]
+                query_features, db_feature
+            )[2]
             points_query = query_features["keypoints"][0][matches[..., 0]].cpu().numpy()
             points_db = db_feature["keypoints"][0][matches[..., 1]].cpu().numpy()
             num_matches.append(len(points_query))
