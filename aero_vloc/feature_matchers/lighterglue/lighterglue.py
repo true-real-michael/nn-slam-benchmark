@@ -27,8 +27,8 @@ class LighterGlue(FeatureMatcher):
             matches = self.xfeat.match_lighterglue(
                 query_features, db_feature
             )[2]
-            points_query = query_features["keypoints"][0][matches[..., 0]].cpu().numpy()
-            points_db = db_feature["keypoints"][0][matches[..., 1]].cpu().numpy()
+            points_query = query_features["keypoints"][matches[..., 0]].cpu().numpy()
+            points_db = db_feature["keypoints"][matches[..., 1]].cpu().numpy()
             num_matches.append(len(points_query))
             matched_kpts_query.append(points_query)
             matched_kpts_reference.append(points_db)
