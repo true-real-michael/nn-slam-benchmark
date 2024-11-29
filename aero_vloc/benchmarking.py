@@ -55,7 +55,7 @@ def benchmark_vpr_system(
     for query_global_desc in query_global_desc:
         index.search(query_global_desc, k_closest)
     time_measurements["index_search"] = timer() - start
-    
+
     return time_measurements
 
 
@@ -84,7 +84,7 @@ def benchmark_feature_matcher(
         feature_matcher: FeatureMatcher,
         local_features: np.ndarray,
         k_closest: int | None,
-) -> Dict[str, Dict[str, List[float]]]:
+) -> Dict[str, float]:
     """
     Benchmark feature matchers with given dataset and queries
 
@@ -97,12 +97,13 @@ def benchmark_feature_matcher(
     time_measurements = {}
 
     start = timer()
-    query_local_features = [feature_matcher.get_feature(queries[i]) for i in tqdm(sample(range(queries.queries_num), k_closest), desc=" Q features")]
+    query_local_features = [feature_matcher.get_feature(query) for query in tqdm(queries, desc=" Q features")]
     time_measurements["feature_extraction"] = timer() - start
 
     start = timer()
-    for query_local_feature in tqdm(query_local_features, desc="Matching"):
-        feature_matcher.match_feature(query_local_feature, local_features, k_closest)
+    for query_features in tqdm(query_local_features, desc="Matching"):
+        local_features = sample(list(local_features), k_closest)
+        feature_matcher.match_feature(query_features, local_features, k_closest)
     time_measurements["feature_matching"] = timer() - start
 
     return time_measurements
