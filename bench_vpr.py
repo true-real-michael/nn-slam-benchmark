@@ -55,7 +55,7 @@ measurements = {}
 
 for vpr_system_name, (method, args) in vpr_systems.items():
     print('Processing', vpr_system_name)
-    file_path = f'index_{DATASET}_{vpr_system_name}.pkl'
+    file_path = f'cache/index_{DATASET}_{vpr_system_name}.pkl'
     vpr_system = method(*args)
     if Path(file_path).exists():
         with open(file_path, 'rb') as f:

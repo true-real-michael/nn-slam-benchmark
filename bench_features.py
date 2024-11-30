@@ -45,7 +45,7 @@ feature_matcher_measurements = {}
 for feature_matcher_name, (method, args) in feature_matchers.items():
     print('Processing', feature_matcher_name)
     feature_matcher = method(*args)
-    file_path = f'local_features_{DATASET}_{feature_matcher_name}.pkl'
+    file_path = f'cache/local_features_{DATASET}_{feature_matcher_name}.pkl'
     if Path(file_path).exists():
         with open(file_path, 'rb') as f:
             local_features = pickle.load(f)
