@@ -22,21 +22,22 @@ from aero_vloc.dataset import Data, Queries
 from aero_vloc.retrieval_system import RetrievalSystem
 
 LIMIT = None
+DATASET = "satellite"
+BOARD = "orin3"
 
-test_ds_name = "satellite"
-test_ds = Data(Path("datasets"), test_ds_name, limit=LIMIT, gt=False)
+test_ds = Data(Path("datasets"), DATASET, limit=LIMIT, gt=False)
 queries = Queries(
     Path("datasets"),
-    "satellite",
+    DATASET,
     knn=None,
-    # knn=test_ds.knn,
     limit=LIMIT
 )
 
 feature_matchers = {
-    'lightglue': [avl.LightGlue, [800]],
-    'superglue': [avl.SuperGlue, ['weights/superglue_outdoor.pth']],
-    # 'sela': [avl.SelaLocal, ['weights/SelaVPR_msls.pth', 'weights/dinov2_vitl14_pretrain.pth']],
+    # 'lightglue': [avl.LightGlue, [800]],
+    # 'superglue': [avl.SuperGlue, ['weights/superglue_outdoor.pth']],
+    # 'lighterglue': [avl.LighterGlue, [800]],
+    'sela': [avl.SelaLocal, ['weights/SelaVPR_msls.pth', 'weights/dinov2_vitl14_pretrain.pth']],
 }
 
 feature_matcher_measurements = {}
@@ -44,7 +45,7 @@ feature_matcher_measurements = {}
 for feature_matcher_name, (method, args) in feature_matchers.items():
     print('Processing', feature_matcher_name)
     feature_matcher = method(*args)
-    file_path = f'local_features_{test_ds_name}_{feature_matcher_name}.pkl'
+    file_path = f'local_features_{DATASET}_{feature_matcher_name}.pkl'
     if Path(file_path).exists():
         with open(file_path, 'rb') as f:
             local_features = pickle.load(f)
@@ -55,3 +56,8 @@ for feature_matcher_name, (method, args) in feature_matchers.items():
             pickle.dump(local_features, f)
     feature_matcher_measurements[feature_matcher_name] = benchmark_feature_matcher(queries, feature_matcher, local_features, 10)
     del feature_matcher
+
+output_file = Path(f'measurements/{BOARD}/{DATASET}_feature.pkl')
+output_file.parent.mkdir(parents=True, exist_ok=True)
+with open(output_file, 'wb') as f:
+    pickle.dump(feature_matcher_measurements, f)

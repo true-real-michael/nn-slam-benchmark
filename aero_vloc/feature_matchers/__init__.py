@@ -13,5 +13,6 @@
 #  limitations under the License.
 from aero_vloc.feature_matchers.feature_matcher import FeatureMatcher
 from aero_vloc.feature_matchers.lightglue import LightGlue
+from aero_vloc.feature_matchers.lighterglue import LighterGlue
 from aero_vloc.feature_matchers.superglue import SuperGlue
 from aero_vloc.feature_matchers.sela import SelaLocal
