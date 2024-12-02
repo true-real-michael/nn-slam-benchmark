@@ -13,11 +13,9 @@
 #  limitations under the License.
 from aero_vloc.dataset import Data, Queries
 from aero_vloc.feature_matchers import LightGlue, LighterGlue, SelaLocal, SuperGlue
-from aero_vloc.homography_estimator import HomographyEstimator
 from aero_vloc.index_searchers import FaissSearcher
 from aero_vloc.localization_pipeline import LocalizationPipeline
-from aero_vloc.metrics import reference_recall, retrieval_recall
-from aero_vloc.primitives import UAVSeq
+from aero_vloc.metrics import get_recall, retrieval_recall
 from aero_vloc.retrieval_system import RetrievalSystem
 from aero_vloc.utils import visualize_matches
 from aero_vloc.vpr_systems import (
