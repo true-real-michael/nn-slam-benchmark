@@ -13,14 +13,12 @@
 #  limitations under the License.
 import numpy as np
 
-from pathlib import Path
 from timeit import default_timer as timer
 from typing import List, Optional, Tuple, Dict
 from tqdm import tqdm
 
 from aero_vloc.feature_matchers import FeatureMatcher
 from aero_vloc.index_searchers import IndexSearcher
-from aero_vloc.primitives import UAVImage
 from aero_vloc.vpr_systems import VPRSystem
 from aero_vloc.dataset import Data
 
@@ -80,7 +78,7 @@ class RetrievalSystem:
         global_predictions = [self.index.search(query_global_desc, vpr_k_closest) for query_global_desc in query_global_desc]
         self.time_measurements["index_search"] = timer() - start
 
-        if feature_matcher_k_closest is None:
+        if feature_matcher_k_closest is None or feature_matcher_k_closest < 2:
             return global_predictions, None, None
         
         start = timer()
