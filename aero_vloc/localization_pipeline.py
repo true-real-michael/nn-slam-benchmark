@@ -13,23 +13,20 @@
 #  limitations under the License.
 from tqdm import tqdm
 
-from aero_vloc.homography_estimator import HomographyEstimator
 from aero_vloc.retrieval_system import RetrievalSystem
 from aero_vloc.dataset import Queries
 
 
 class LocalizationPipeline:
     """
-    Allows to create a localizator based on the retrieval system and homography estimator.
+    Allows to create a localizator based on the retrieval system.
     """
 
     def __init__(
         self,
         retrieval_system: RetrievalSystem,
-        homography_estimator: HomographyEstimator,
     ):
         self.retrieval_system = retrieval_system
-        self.homography_estimator = homography_estimator
 
     def process_all(self, query_seq: Queries, k_closest: int):
         results = self.retrieval_system.process_batch(query_seq, k_closest, 1)
@@ -43,7 +40,7 @@ class LocalizationPipeline:
         # ) -> list[Optional[Tuple[float, float]]]:
     ) -> list[int]:
         """
-        Calculates UAV locations using the retrieval system and homography estimator.
+        Calculates UAV locations using the retrieval system.
 
         :param query_seq: The sequence of images for which locations should be calculated
         :param k_closest: Specifies how many predictions for each query the global localization should make.

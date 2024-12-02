@@ -4,7 +4,6 @@ from pathlib import Path
 
 salad = avl.SALAD()
 light_glue = avl.LightGlue()
-homography_estimator = avl.HomographyEstimator()
 queries = avl.UAVSeq(Path("tests/test_data/queries/queries.txt"))
 
 
@@ -24,6 +23,6 @@ def create_localization_pipeline(
     faiss_searcher = avl.FaissSearcher()
     retrieval_system = avl.RetrievalSystem(salad, sat_map, light_glue, faiss_searcher)
     localization_pipeline = avl.LocalizationPipeline(
-        retrieval_system, homography_estimator
+        retrieval_system
     )
     return localization_pipeline
