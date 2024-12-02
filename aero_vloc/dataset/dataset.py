@@ -27,7 +27,7 @@ base_transform = transforms.Compose([transforms.ToTensor()])
 
 
 class Data(torch.utils.data.Dataset):
-    def __init__(self, dataset_dir: Path, dataset_name, resize=[224, 224], limit=10, gt=True):
+    def __init__(self, dataset_dir: Path, dataset_name, resize=[224, 224], limit=None, gt=True):
         super().__init__()
         if not dataset_dir.exists():
             raise FileNotFoundError(f"Dataset folder {dataset_dir} not found.")
@@ -71,7 +71,7 @@ class Queries(torch.utils.data.Dataset):
         dataset_name,
         knn: NearestNeighbors | None,
         resize=[224, 224],
-        limit=10,
+        limit=None,
     ):
         super().__init__()
         queries_dir = dataset_dir / dataset_name / "images/test" / "queries"

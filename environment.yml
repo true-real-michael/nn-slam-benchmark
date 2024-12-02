@@ -19,6 +19,7 @@ dependencies:
   - geopy
   - faiss-gpu
   - pandas
+  - pytest
   - pip:
     - prettytable==3.9.0
     - pytorch-lightning==2.1.2

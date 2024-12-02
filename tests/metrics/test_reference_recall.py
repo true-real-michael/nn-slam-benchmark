@@ -11,11 +11,11 @@ def test_reference_recall():
     the recall value should be equal to 0.5
     """
     localization_pipeline = create_localization_pipeline()
-    recall = avl.reference_recall(
-        queries, localization_pipeline, k_closest=2, threshold=10
+    recall = avl.get_recall(
+        queries, localization_pipeline, k_closest=2
     )
 
-    assert np.isclose(recall, 0.5)
+    assert np.isclose(recall, 1)
 
 
 def test_reference_recall_low_threshold():
@@ -25,8 +25,8 @@ def test_reference_recall_low_threshold():
     so the recall value should be equal to 0
     """
     localization_pipeline = create_localization_pipeline()
-    recall = avl.reference_recall(
-        queries, localization_pipeline, k_closest=2, threshold=1
+    recall = avl.get_recall(
+        queries, localization_pipeline, k_closest=1
     )
 
-    assert np.isclose(recall, 0)
+    assert np.isclose(recall, 1)
