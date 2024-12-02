@@ -1,0 +1,15 @@
+torch @ https://developer.download.nvidia.com/compute/redist/jp/v61/pytorch/torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
+torchvision @ git+https://github.com/pytorch/vision.git@v0.20.0
+einops==0.8.0
+faiss_cpu==1.9.0.post1
+geopy==2.4.1
+numpy==1.26.1
+opencv-python==4.10.0.84
+pillow==11.0.0
+prettytable==3.12.0
+pytest==8.3.3
+pytorch_lightning==2.4.0
+pytorch-metric-learning==2.7.0
+requests==2.32.3
+scikit_learn==1.5.2
+tqdm==4.67.1
