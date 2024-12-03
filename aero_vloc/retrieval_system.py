@@ -79,7 +79,7 @@ class RetrievalSystem:
         self.time_measurements["index_search"] = timer() - start
 
         if feature_matcher_k_closest is None or feature_matcher_k_closest < 2:
-            return global_predictions, None, None
+            return [(global_predictions, None, None)]
         
         start = timer()
         query_local_features = [self.feature_matcher.get_feature(image) for image in images]
@@ -92,7 +92,7 @@ class RetrievalSystem:
         ) for query_local_feature, filtered_db_feature in zip(query_local_features, filtered_db_features)]
         self.time_measurements["feature_matching"] = timer() - start
 
-        res_predictions = [((global_prediction[local_prediction], matched_kpts_query, matched_kpts_reference)) for global_prediction, (local_prediction, matched_kpts_query, matched_kpts_reference) in zip(global_predictions, local_predictions)]
+        res_predictions = [(global_prediction[local_prediction], matched_kpts_query, matched_kpts_reference) for global_prediction, (local_prediction, matched_kpts_query, matched_kpts_reference) in zip(global_predictions, local_predictions)]
         return res_predictions
 
 

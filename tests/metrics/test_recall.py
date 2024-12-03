@@ -4,7 +4,7 @@ import numpy as np
 from tests.utils import create_localization_pipeline, queries
 
 
-def test_reference_recall():
+def test_recall():
     """
     Validates the metric using a reasonable level of threshold.
     Since one image was taken outside the test map,
@@ -18,7 +18,7 @@ def test_reference_recall():
     assert np.isclose(recall, 1)
 
 
-def test_reference_recall_low_threshold():
+def test_recall_low_threshold():
     """
     Validates the metric using a low level of threshold.
     System can't locate queries with such accuracy,

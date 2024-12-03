@@ -29,7 +29,7 @@ class LocalizationPipeline:
         self.retrieval_system = retrieval_system
 
     def process_all(self, query_seq: Queries, k_closest: int):
-        results = self.retrieval_system.process_batch(query_seq, k_closest, 1)
+        results = self.retrieval_system.process_batch(query_seq, k_closest, k_closest)
         return [result[0][0] for result in results]
 
 
