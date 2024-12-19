@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from pathlib import Path
 import numpy as np
 import torch
 
@@ -20,10 +21,10 @@ from aero_vloc.vpr_systems.netvlad.model.models_generic import (
     get_model,
     get_pca_encoding,
 )
-from aero_vloc.vpr_systems.vpr_system import VPRSystem
+from aero_vloc.vpr_systems.vpr_system import RknnExportable, VPRSystem
 
 
-class NetVLAD(VPRSystem):
+class NetVLAD(VPRSystem, RknnExportable):
     """
     Implementation of [NetVLAD](https://github.com/QVPR/Patch-NetVLAD) global localization method.
     """
@@ -63,3 +64,25 @@ class NetVLAD(VPRSystem):
             vlad_global_pca = get_pca_encoding(self.model, vlad_global)
             desc = vlad_global_pca.detach().cpu().numpy()[0]
         return desc
+
+    def export_torchscript(self, output: Path):
+        class Unsqueeze(torch.nn.Module):
+            def __init__(self):
+                super(Unsqueeze, self).__init__()
+
+            def forward(self, x):
+                return x.unsqueeze(-1).unsqueeze(-1)
+
+        cpu = torch.device("cpu")
+
+        unified = torch.nn.Sequential(
+            self.model.encoder,
+            self.model.pool,
+            Unsqueeze().eval().to(self.device),
+            self.model.WPCA,
+        ).eval().to(cpu)
+        trace = torch.jit.trace(
+            unified, torch.Tensor(1, 3, self.resize, self.resize)
+        )
+
+        trace.save(output)

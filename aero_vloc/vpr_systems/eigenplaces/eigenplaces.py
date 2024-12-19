@@ -11,14 +11,17 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 import numpy as np
 import torch
 
+from aero_vloc.model_conversion import rk3588
 from aero_vloc.utils import transform_image_for_vpr
-from aero_vloc.vpr_systems.vpr_system import VPRSystem
+from aero_vloc.vpr_systems.vpr_system import RknnExportable, VPRSystem
 
 
-class EigenPlaces(VPRSystem):
+class EigenPlaces(VPRSystem, RknnExportable):
     """
     Implementation of [EigenPlaces](https://github.com/gmberton/EigenPlaces) global localization method.
     """
@@ -55,3 +58,8 @@ class EigenPlaces(VPRSystem):
             descriptor = self.model(image)
         descriptor = descriptor.cpu().numpy()[0]
         return descriptor
+
+    def export_torchscript(self, output: Path):
+        trace = torch.jit.trace(self.model, torch.Tensor(1, 3, self.resize, self.resize).to(self.device))
+        trace.save(output)
+    
