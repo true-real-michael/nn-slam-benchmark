@@ -22,4 +22,7 @@ fi
 
 if [ ! -f /usr/bin/rknn_server ]; then
   cp thirdparty/rknn-toolkit2/rknpu2/runtime/Linux/rknn_server/aarch64/usr/bin/* /usr/bin
+  sudo chmod +x /usr/bin/rknn_server
+  sudo chmod +x /usr/bin/start_rknn.sh
+  sudo chmod +x /usr/bin/restart_rknn.sh
 fi

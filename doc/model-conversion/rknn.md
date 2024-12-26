@@ -208,16 +208,25 @@ Unsupported layers can be replaced with custom layers, for example, here is
 the [EigenPlaces model](https://github.com/gmberton/EigenPlaces/blob/main/eigenplaces_model/eigenplaces_network.py):
 
 ```py
+class L2Norm(nn.Module):
+    def __init__(self, dim=1):
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, x):
+        return nn.functional.normalize(x, p=2.0, dim=self.dim)  # Unsupported by RKNN
+
+    
 class GeoLocalizationNet_(nn.Module):
     def __init__(self, backbone: str, fc_output_dim: int):
         super().__init__()
         self.backbone, features_dim = _get_backbone(backbone)
         self.aggregation = nn.Sequential(
-            L2Norm(),  # This layer is not supported by RKNN
+            L2Norm(),
             GeM(),
             Flatten(),
             nn.Linear(features_dim, fc_output_dim),
-            L2Norm()  # This layer is not supported by RKNN
+            L2Norm()
         )
 
     def forward(self, x):
@@ -226,22 +235,8 @@ class GeoLocalizationNet_(nn.Module):
         return x
 ```
 
-The `L2Norm()` layer is [custom](https://github.com/gmberton/EigenPlaces/blob/main/eigenplaces_model/layers.py) and was
-created by the authors of EigenPlaces:
-
-```py
-class L2Norm(nn.Module):
-    def __init__(self, dim=1):
-        super().__init__()
-        self.dim = dim
-
-    def forward(self, x):
-        return nn.functional.normalize(x, p=2.0, dim=self.dim)
-```
-
-However, RKNN does not support `torch.nn.functional.normalize`.
-
-This layer can be replaced with the following code:
+RKNN does not support `torch.nn.functional.normalize`, which is used in the custom `L2Norm` module.
+It layer can be replaced with the following:
 
 ```py
 class RknnCompatibleL2Norm(nn.Module):
@@ -256,10 +251,10 @@ class RknnCompatibleL2Norm(nn.Module):
         return x / norm
 ```
 
-To do the replacement, the model should be modified
+To do the replacement on the trained model, the following code can be used:
 
 ```py
-net = torch.hub.load(  # Loading the raw model
+net = torch.hub.load(  # Loading the trained model
     "gmberton/cosplace",
     "get_trained_model",
     backbone="ResNet101",
