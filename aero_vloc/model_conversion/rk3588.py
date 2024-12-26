@@ -37,38 +37,3 @@ def convert(
     if ret != 0:
         raise RuntimeError("Export rknn model failed!")
 
-
-def convert_lightning(
-    model: torch.nn.Module,
-    shape: Tuple[int, int],
-    output: Path,
-    quantization_dataset: Path | None = None,
-):
-    input_shape = [1, 3, shape[0], shape[1]]
-    # trace_model = torch.jit.trace(model, torch.Tensor(*input_shape))
-    trace_model = model.to_torchscript(method="trace")
-
-    rknn = RKNN(verbose=True)
-    rknn.config(
-        mean_values=[124.16, 116.736, 103.936],
-        std_values=[58.624, 57.344, 57.6],
-        target_platform="rk3588",
-    )
-
-    with NamedTemporaryFile(suffix='.pt') as f:
-        trace_model.save(f.name)
-        ret = rknn.load_pytorch(model=f.name, input_size_list=[input_shape])
-
-    if ret != 0:
-        raise RuntimeError("Failed to load model")
-
-    if quantization_dataset is not None:
-        ret = rknn.build(do_quantization=True, dataset=quantization_dataset)
-    else:
-        ret = rknn.build(do_quantization=False)
-    if ret != 0:
-        raise RuntimeError("Failed to build model")
-
-    ret = rknn.export_rknn(str(output))
-    if ret != 0:
-        raise RuntimeError("Export rknn model failed!")
