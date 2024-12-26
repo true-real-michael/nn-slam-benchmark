@@ -13,6 +13,7 @@ These instructions were tested on an Orange Pi 5 with Ubuntu 22.04 from [ubutnu-
 2. [Original Examples](#original-examples)
    1. [Model conversion example \[host computer\]](#model-conversion-example-host-computer)
    2. [Model inference example \[target device\]](#model-inference-example-target-device)
+3. [Unsupported layers](#unsupported-layers)
 
 ## Environment
 
@@ -222,7 +223,7 @@ class RknnCompatibleL2Norm(nn.Module):
 
     def forward(self, x):
         norm = torch.sqrt(
-            torch.sum(x ** 2, dim=self.dim, keepdim=True) + 1e-6)  # Add epsilon to avoid division by zero
+            torch.sum(x ** 2, dim=self.dim, keepdim=True) + self.eps)
         return x / norm
 ```
 
