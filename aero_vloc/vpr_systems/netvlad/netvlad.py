@@ -22,7 +22,7 @@ from aero_vloc.vpr_systems.netvlad.model.models_generic import (
     get_pca_encoding,
 )
 from aero_vloc.vpr_systems.vpr_system import VPRSystem
-from aero_vloc.model_conversion.rk3588 import RknnExportable
+from aero_vloc.model_conversion.rknn import RknnExportable
 
 
 class NetVLAD(VPRSystem, RknnExportable):

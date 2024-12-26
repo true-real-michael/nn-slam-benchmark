@@ -1,9 +1,6 @@
-import torch
-
 from abc import ABC, abstractmethod
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Tuple
 
 from rknn.api import RKNN
 

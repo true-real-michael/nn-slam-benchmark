@@ -75,7 +75,7 @@ sudo cp rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so /usr/lib/
 
 ### Model conversion example [host computer]
 
-The `rknn-toolkit2/examples` directory containes the examples of model conversion.
+The `rknn-toolkit2/examples` directory contains the examples of model conversion.
 
 Try the resnet18 example
 ```sh
@@ -85,7 +85,7 @@ python test.py
 
 [test.py](https://github.com/airockchip/rknn-toolkit2/blob/master/rknn-toolkit2/examples/pytorch/resnet18/test.py) loads the model, does the conversion and launches the model on the simulator.
 
-The part of code responsible for the model convesion is
+The part of code responsible for the model conversion is
 
 ```py
 from rknn.api import RKNN
@@ -132,6 +132,10 @@ print('done')
 # ...
 ```
 
+Note that the normalization is done within the model, so the mean and std values are passed during the configuration.
+
+In addition to PyTorch models, the toolkit supports TensorFlow, TFLite, ONNX, and Caffe models.
+
 Alternatively, it is possible to convert the model using a config file
 
 ```yml
@@ -159,7 +163,7 @@ python3 -m rknn.api.rknn_convert -t rk3588 -i ./model_config.yml -o ./
 
 ### Model inference example [target device]
 
-The `rknn-toolkit-lite2/examples` directory containes the examples of model inference.
+The `rknn-toolkit-lite2/examples` directory contains the examples of model inference.
 
 ```sh
 cd rknn-toolkit-lite2/examples/resnet18
@@ -169,3 +173,67 @@ python test.py
 [test.py](https://github.com/airockchip/rknn-toolkit2/blob/master/rknn-toolkit-lite2/examples/resnet18/test.py) file here contains the code for model inference on the device.
 
 
+## Unsupported layers
+
+The `rknn-toolkit2` does not support all layers of the aforementioned frameworks. 
+If the model contains unsupported layers, the conversion will either fail or the layers will be computed on the CPU.
+I have not found a list of layers, which lead to the failure of the conversion, so the most straightforward way is to try the conversion and see if it works.
+
+Unsupported layers can be replaced with custom layers, for example, here is the [EigenPlaces model](https://github.com/gmberton/EigenPlaces/blob/main/eigenplaces_model/eigenplaces_network.py):
+```py
+class GeoLocalizationNet_(nn.Module):
+    def __init__(self, backbone : str, fc_output_dim : int):
+        super().__init__()
+        self.backbone, features_dim = _get_backbone(backbone)
+        self.aggregation = nn.Sequential(
+            L2Norm(),            # This layer is not supported by RKNN
+            GeM(),
+            Flatten(),
+            nn.Linear(features_dim, fc_output_dim),
+            L2Norm()             # This layer is not supported by RKNN
+        )
+    
+    def forward(self, x):
+        x = self.backbone(x)
+        x = self.aggregation(x)
+        return x
+```
+
+The `L2Norm()` layer is [custom](https://github.com/gmberton/EigenPlaces/blob/main/eigenplaces_model/layers.py) and was created by the authors of EigenPlaces:
+```py
+class L2Norm(nn.Module):
+    def __init__(self, dim=1):
+        super().__init__()
+        self.dim = dim
+    
+    def forward(self, x):
+        return nn.functional.normalize(x, p=2.0, dim=self.dim)
+```
+
+However, RKNN does not support `torch.nn.functional.normalize`.
+
+This layer can be replaced with the following code:
+```py
+class RknnCompatibleL2Norm(nn.Module):
+    def __init__(self, dim=1, eps=1e-12):
+        super().__init__()
+        self.dim = dim
+        self.eps = eps
+
+    def forward(self, x):
+        norm = torch.sqrt(
+            torch.sum(x ** 2, dim=self.dim, keepdim=True) + 1e-6)  # Add epsilon to avoid division by zero
+        return x / norm
+```
+
+To do the replacement, the model should be modified
+```py
+net = torch.hub.load(  # Loading the raw model
+      "gmberton/cosplace",
+      "get_trained_model",
+      backbone="ResNet101",
+      fc_output_dim=2048,
+)
+net.aggregation[0] = RknnCompatibleL2Norm()  # Replacing the first L2Norm layer
+net.aggregation[4] = RknnCompatibleL2Norm()  # Replacing the second L2Norm layer
+```

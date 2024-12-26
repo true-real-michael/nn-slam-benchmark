@@ -19,7 +19,7 @@ import torchvision
 
 from aero_vloc.utils import transform_image_for_vpr
 from aero_vloc.vpr_systems.vpr_system import VPRSystem
-from aero_vloc.model_conversion.rk3588 import RknnExportable
+from aero_vloc.model_conversion.rknn import RknnExportable
 from aero_vloc.vpr_systems.mixvpr.model.mixvpr_model import VPRModel
 
 MIXVPR_RESIZE = 320
