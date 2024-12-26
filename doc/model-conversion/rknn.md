@@ -5,6 +5,15 @@ This guide may also be applicable for other chips with Rockchip NPU, but there m
 
 These instructions were tested on an Orange Pi 5 with Ubuntu 22.04 from [ubutnu-rockchip](https://github.com/Joshua-Riek/ubuntu-rockchip)
 
+## Table of contents
+
+1. [Environment](#environment)
+   1. [Host setup](#host-setup)
+   2. [Orange Pi 5 setup](#orange-pi-5-setup)
+2. [Original Examples](#original-examples)
+   1. [Model conversion example \[host computer\]](#model-conversion-example-host-computer)
+   2. [Model inference example \[target device\]](#model-inference-example-target-device)
+
 ## Environment
 
 Apart from the Orange Pi 5 itself, a host computer for model conversion is required.
