@@ -11,14 +11,10 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from pathlib import Path
-from tempfile import NamedTemporaryFile
 import torch
 import numpy as np
 
 from abc import ABC, abstractmethod
-
-from aero_vloc.model_conversion import rk3588
 
 
 class VPRSystem(ABC):
@@ -38,12 +34,3 @@ class VPRSystem(ABC):
         """
         pass
 
-class RknnExportable(ABC):
-    def export_rknn(self, output: Path):
-        """
-        Export the model to the RKNN format.
-        :param output: The path to save the model
-        """
-        with NamedTemporaryFile(suffix='.pt') as file:
-            self.export_torchscript(file.name)
-            rk3588.convert(file.name, (self.resize, self.resize), output)
