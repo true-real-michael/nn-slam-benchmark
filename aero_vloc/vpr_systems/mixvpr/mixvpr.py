@@ -22,6 +22,8 @@ from aero_vloc.vpr_systems.vpr_system import VPRSystem
 from aero_vloc.model_conversion.rk3588 import RknnExportable
 from aero_vloc.vpr_systems.mixvpr.model.mixvpr_model import VPRModel
 
+MIXVPR_RESIZE = 320
+
 
 class MixVPR(VPRSystem, RknnExportable):
     """
@@ -48,7 +50,7 @@ class MixVPR(VPRSystem, RknnExportable):
                 "out_rows": 4,
             },
         )
-        self.resize = 320
+        self.resize = MIXVPR_RESIZE
 
         state_dict = torch.load(ckpt_path)
         self.model.load_state_dict(state_dict)
@@ -67,5 +69,5 @@ class MixVPR(VPRSystem, RknnExportable):
 
     def export_torchscript(self, output: Path):
         trace = self.model.to_torchscript(method="trace", example_inputs=torch.randn(1, 3, self.resize, self.resize))
-        trace.save(output)
-    
+        trace.save(str(output))
+

@@ -7,19 +7,22 @@ from typing import Tuple
 
 from rknn.api import RKNN
 
+from aero_vloc.vpr_systems import VPRSystem
 
-class RknnExportable(ABC):
+
+class RknnExportable(VPRSystem, ABC):
     @abstractmethod
-    def export_torchscript(output: Path):
+    def export_torchscript(self, output: Path):
         pass
     
-    def export_rknn(self, output: Path):
+    def export_rknn(self, output: Path, quantization_dataset: Path | None = None):
         """
         Export the model to the RKNN format.
         :param output: The path to save the model
+        :param quantization_dataset: Dataset to quantize the model
         """
         with NamedTemporaryFile(suffix='.pt') as file:
-            self.export_torchscript(file.name)
+            self.export_torchscript(Path(file.name))
             
             input_shape = [1, 3, self.resize, self.resize]
             rknn = RKNN(verbose=True)

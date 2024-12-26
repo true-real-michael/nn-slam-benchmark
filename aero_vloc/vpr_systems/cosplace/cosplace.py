@@ -60,5 +60,5 @@ class CosPlace(VPRSystem, RknnExportable):
     
     def export_torchscript(self, output: Path):
         trace = torch.jit.trace(self.model, torch.Tensor(1, 3, self.resize, self.resize).to(self.device))
-        trace.save(output)
+        trace.save(str(output))
     

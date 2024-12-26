@@ -86,4 +86,4 @@ class NetVLAD(VPRSystem, RknnExportable):
             unified, torch.Tensor(1, 3, self.resize, self.resize)
         )
 
-        trace.save(output)
+        trace.save(str(output))
