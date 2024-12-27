@@ -11,6 +11,7 @@ from [ubutnu-rockchip](https://github.com/Joshua-Riek/ubuntu-rockchip) and Pytho
 [This](https://github.com/airockchip/rknn-toolkit2/blob/master/doc/02_Rockchip_RKNPU_User_Guide_RKNN_SDK_V2.3.0_EN.pdf)
 is the most relevant part of the documentation. If something concerning the parameters, options the workflow as a whole
 is not documented here, there is a good chance that the information you're looring for is in this document.
+Also the whole quantization part is skipped here, so if you need to quantize the model, you may want to refer to the docs.
 
 ## Table of contents
 
@@ -22,6 +23,8 @@ is not documented here, there is a good chance that the information you're loori
     1. [Model conversion example \[host computer\]](#model-conversion-example-host-computer)
     2. [Model inference example \[target device\]](#model-inference-example-target-device)
 4. [Unsupported layers](#unsupported-layers)
+5. [Disclaimer](#disclaimer)
+6. [Contact information](#contact-information)
 
 
 ## Overview
@@ -336,6 +339,12 @@ net.aggregation[0] = RknnCompatibleL2Norm()  # Replacing the first L2Norm layer
 net.aggregation[4] = RknnCompatibleL2Norm()  # Replacing the second L2Norm layer
 ```
 
+## Disclaimer
+
+This guide is far from being extensive as RKNN offers a lot of features and options, which are not covered here.
+For example, the quantization process can be customized, and I did not dive into the details of the process.
+RKNN also allows for custom operations (ONNX only), which can be used to implement the unsupported layers.
+
 ## Contact information
 
-If you have any questions or need help with the conversion, feel free to contact me at [tg:true_real_michael](https://t.me/true_real_michael).
+If you have any questions or need help with the conversion or have suggestions to this guide, feel free to contact me at [tg:true_real_michael](https://t.me/true_real_michael).
