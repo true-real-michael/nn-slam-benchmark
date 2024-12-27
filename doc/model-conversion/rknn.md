@@ -7,11 +7,15 @@ order to support different chips.
 
 These instructions were tested on an Orange Pi 5 with Ubuntu 22.04
 from [ubutnu-rockchip](https://github.com/Joshua-Riek/ubuntu-rockchip) and Python 3.10
+Apart from the Orange Pi 5 itself, a host computer for model conversion is required. Ubuntu 22.04 with Python 3.10 was
+used for this purpose.
 
 [This](https://github.com/airockchip/rknn-toolkit2/blob/master/doc/02_Rockchip_RKNPU_User_Guide_RKNN_SDK_V2.3.0_EN.pdf)
-is the most relevant part of the documentation. If something concerning the parameters, options, or the workflow as a whole
+is the most relevant part of the documentation. If something concerning the parameters, options, or the workflow as a
+whole
 is not documented here, there is a good chance that the information you're looking for is in this document.
-Also, the whole quantization part is skipped here, so if you need to quantize the model, you may want to refer to the docs.
+Also, the whole quantization part is skipped here, so if you need to quantize the model, you may want to refer to the
+docs.
 
 ## Table of contents
 
@@ -25,7 +29,6 @@ Also, the whole quantization part is skipped here, so if you need to quantize th
 4. [Unsupported layers](#unsupported-layers)
 5. [Disclaimer](#disclaimer)
 6. [Contact information](#contact-information)
-
 
 ## Overview
 
@@ -52,16 +55,15 @@ The workflow as a whole looks like this
 
 ## Environment
 
-Apart from the Orange Pi 5 itself, a host computer for model conversion is required.
-
-The [airockchip/rknn-toolkit2](https://github.com/airockchip/rknn-toolkit2/) has the wheels for conversion and running
+The [airockchip/rknn-toolkit2](https://github.com/airockchip/rknn-toolkit2/) repository has the wheels for conversion
+and running
 the models.
 
 > **_NOTE:_** Do NOT use the `rockchip-linux/rknn-toolkit2` repository as it is no longer maintained.
 
 The `rknn-toolkit2` directory is for model conversion on the **host computer**.
 
-The `rknn-toolkit-lite2` directory is for inference the **target device**.
+The `rknn-toolkit-lite2` directory is for inference on the **target device**.
 
 ### Host setup
 
@@ -111,17 +113,18 @@ sudo chmod +x /usr/bin/start_rknn.sh
 sudo chmod +x /usr/bin/restart_rknn.sh
 ```
 
-5. Restart the RKNN server
+5. Copy the api library to `/usr/lib`
+
+```sh
+sudo cp rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so /usr/lib/
+```
+
+6. Restart the RKNN server
 
 ```sh
 restart_rknn.sh
 ```
 
-6. Copy the api library to `/usr/lib`
-
-```sh
-sudo cp rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so /usr/lib/
-```
 
 ## Original examples
 
@@ -129,7 +132,7 @@ sudo cp rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so /usr/lib/
 
 The `rknn-toolkit2/examples` directory contains the examples of model conversion.
 
-Try the resnet1 example
+Try the resnet18 example
 
 ```sh
 cd rknn-toolkit2/examples/pytorch/resnet18
@@ -199,7 +202,7 @@ models:
   name: resnet_18              # name of the output model
   platform: pytorch            # the framework of the original model
   model_file_path: ./resnet18.pt # pytorch model file
-  subgraphs: # input shape in the format:
+  subgraphs:         # input shape in the format:
     input_size_list: # `batch size`, `channels`, `heights`, `width`
       - 1, 3, 224, 224
   quantize: true               # whether to quantize the model
@@ -216,7 +219,6 @@ models:
 ```sh
 python3 -m rknn.api.rknn_convert -t rk3588 -i ./model_config.yml -o ./
 ```
-
 
 ### Model inference example [target device]
 
@@ -272,10 +274,9 @@ rknn_lite.release()
 # ...
 ```
 
-
 ## Unsupported layers
 
-The `rknn-toolkit2` does not support all layers of the aforementioned frameworks.
+Some layers of the aforementioned frameworks are not supported by RKNN.
 If the model contains unsupported layers, the conversion will either fail or the layers will be computed on the CPU.
 I have not found a list of layers, which lead to the failure of the conversion, so the most straightforward way is to
 try the conversion and see if it works.
@@ -292,17 +293,17 @@ class L2Norm(nn.Module):
     def forward(self, x):
         return nn.functional.normalize(x, p=2.0, dim=self.dim)  # Unsupported by RKNN
 
-    
+
 class GeoLocalizationNet_(nn.Module):
     def __init__(self, backbone: str, fc_output_dim: int):
         super().__init__()
         self.backbone, features_dim = _get_backbone(backbone)
         self.aggregation = nn.Sequential(
-            L2Norm(),
+            L2Norm(),      # Custom layer defined above
             GeM(),
             Flatten(),
             nn.Linear(features_dim, fc_output_dim),
-            L2Norm()
+            L2Norm()       # Custom layer defined above
         )
 
     def forward(self, x):
@@ -312,7 +313,7 @@ class GeoLocalizationNet_(nn.Module):
 ```
 
 RKNN does not support `torch.nn.functional.normalize`, which is used in the custom `L2Norm` module.
-The `L2Norm` layer can be replaced with the following:
+It can be replaced with the following:
 
 ```py
 class RknnCompatibleL2Norm(nn.Module):
@@ -340,6 +341,9 @@ net.aggregation[0] = RknnCompatibleL2Norm()  # Replacing the first L2Norm layer
 net.aggregation[4] = RknnCompatibleL2Norm()  # Replacing the second L2Norm layer
 ```
 
+This would allow the model to be converted to RKNN format.
+However, this approach is not applicable to trainable layers, as the weights would be lost.
+
 ## Disclaimer
 
 This guide is far from being extensive as RKNN offers a lot of features and options, which are not covered here.
@@ -348,4 +352,5 @@ RKNN also allows for custom operations (ONNX only), which can be used to impleme
 
 ## Contact information
 
-If you have any questions or need help with the conversion or have suggestions to this guide, feel free to contact me at [tg:true_real_michael](https://t.me/true_real_michael).
+If you have any questions or need help with the conversion or have suggestions to this guide, feel free to contact me
+at [tg:true_real_michael](https://t.me/true_real_michael).
