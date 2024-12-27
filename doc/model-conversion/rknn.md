@@ -9,7 +9,7 @@ These instructions were tested on an Orange Pi 5 with Ubuntu 22.04
 from [ubutnu-rockchip](https://github.com/Joshua-Riek/ubuntu-rockchip) and Python 3.10
 
 [This](https://github.com/airockchip/rknn-toolkit2/blob/master/doc/02_Rockchip_RKNPU_User_Guide_RKNN_SDK_V2.3.0_EN.pdf)
-is the most relevant part of the documentation. If something concerning the parameters, options the workflow as a whole
+is the most relevant part of the documentation. If something concerning the parameters, options, or the workflow as a whole
 is not documented here, there is a good chance that the information you're looring for is in this document.
 Also, the whole quantization part is skipped here, so if you need to quantize the model, you may want to refer to the docs.
 
