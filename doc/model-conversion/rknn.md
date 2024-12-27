@@ -6,17 +6,45 @@ This guide may also be applicable for other chips with Rockchip NPU, but there m
 order to support different chips.
 
 These instructions were tested on an Orange Pi 5 with Ubuntu 22.04
-from [ubutnu-rockchip](https://github.com/Joshua-Riek/ubuntu-rockchip)
+from [ubutnu-rockchip](https://github.com/Joshua-Riek/ubuntu-rockchip) and Python 3.10
+
+[This](https://github.com/airockchip/rknn-toolkit2/blob/master/doc/02_Rockchip_RKNPU_User_Guide_RKNN_SDK_V2.3.0_EN.pdf)
+is the most relevant part of the documentation. If something concerning the parameters, options the workflow as a whole
+is not documented here, there is a good chance that the information you're looring for is in this document.
 
 ## Table of contents
 
-1. [Environment](#environment)
+1. [Overview](#overview)
+2. [Environment](#environment)
     1. [Host setup](#host-setup)
     2. [Orange Pi 5 setup](#orange-pi-5-setup)
-2. [Original Examples](#original-examples)
+3. [Original Examples](#original-examples)
     1. [Model conversion example \[host computer\]](#model-conversion-example-host-computer)
     2. [Model inference example \[target device\]](#model-inference-example-target-device)
-3. [Unsupported layers](#unsupported-layers)
+4. [Unsupported layers](#unsupported-layers)
+
+
+## Overview
+
+The workflow as a whole looks like this
+
+```
+|    HOST [model conversion]      |  TARGET [model inference]  |
+|---------------------------------|----------------------------|
+|       create RKNN object        |                            |
+|            config               |                            |
+|           load model            |                            |
+|         build for rknn          |                            |
+| [optional] run on the simulator |                            |
+|          export model           |                            |
+|          RKNN release           |   create RKNNLite object   |
+|                                 |      load rknn model       |
+|                                 |   RKNNLite init runtime    |
+|                                 |   preprocess input  (CPU)  |
+|                                 |     run inference   (NPU)  |
+|                                 |  postprocess output (CPU)  |
+|                                 |     RKNNLite release       |
+```
 
 ## Environment
 
@@ -97,7 +125,7 @@ sudo cp rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so /usr/lib/
 
 The `rknn-toolkit2/examples` directory contains the examples of model conversion.
 
-Try the resnet18 example
+Try the resnet1 example
 
 ```sh
 cd rknn-toolkit2/examples/pytorch/resnet18
@@ -185,6 +213,7 @@ models:
 python3 -m rknn.api.rknn_convert -t rk3588 -i ./model_config.yml -o ./
 ```
 
+
 ### Model inference example [target device]
 
 The `rknn-toolkit-lite2/examples` directory contains the examples of model inference.
@@ -196,6 +225,49 @@ python test.py
 
 [test.py](https://github.com/airockchip/rknn-toolkit2/blob/master/rknn-toolkit-lite2/examples/resnet18/test.py) file
 here contains the code for model inference on the device.
+
+The part of code responsible for the model inference is
+
+```py
+from rknnlite.api import RKNNLite
+
+# ...
+# ...
+
+rknn_model = './resnet_18.rknn'
+
+rknn_lite = RKNNLite()
+
+# Load RKNN model
+print('--> Load RKNN model')
+ret = rknn_lite.load_rknn(rknn_model)
+if ret != 0:
+    print('Load RKNN model failed')
+    exit(ret)
+print('done')
+
+ori_img = cv2.imread('./space_shuttle_224.jpg')
+img = cv2.cvtColor(ori_img, cv2.COLOR_BGR2RGB)
+img = np.expand_dims(img, 0)
+
+# Init runtime environment
+print('--> Init runtime environment')
+ret = rknn_lite.init_runtime(core_mask=RKNNLite.NPU_CORE_0)
+if ret != 0:
+    print('Init runtime environment failed')
+    exit(ret)
+print('done')
+
+# Inference
+print('--> Running model')
+outputs = rknn_lite.inference(inputs=[img])
+
+rknn_lite.release()
+
+# ...
+# ...
+```
+
 
 ## Unsupported layers
 
@@ -263,3 +335,7 @@ net = torch.hub.load(  # Loading the trained model
 net.aggregation[0] = RknnCompatibleL2Norm()  # Replacing the first L2Norm layer
 net.aggregation[4] = RknnCompatibleL2Norm()  # Replacing the second L2Norm layer
 ```
+
+## Contact information
+
+If you have any questions or need help with the conversion, feel free to contact me at [tg:true_real_michael](https://t.me/true_real_michael).
