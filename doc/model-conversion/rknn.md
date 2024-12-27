@@ -40,7 +40,8 @@ The workflow as a whole looks like this
 |         build for rknn          |                            |
 | [optional] run on the simulator |                            |
 |          export model           |                            |
-|          RKNN release           |   create RKNNLite object   |
+|          RKNN release           |                            |
+|                                 |   create RKNNLite object   |
 |                                 |      load rknn model       |
 |                                 |   RKNNLite init runtime    |
 |                                 |   preprocess input  (CPU)  |
