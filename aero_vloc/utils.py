@@ -21,9 +21,9 @@ from torchvision.transforms import InterpolationMode
 from typing import Tuple
 
 
-def get_new_size(height: int, width: int, resize: int):
+def get_new_size(height: int, width: int, resize: int, soft: bool):
     scale = resize / max(height, width)
-    if scale >= 1:
+    if soft and scale >= 1:
         return height, width
     else:
         height_new, width_new = int(round(height * scale)), int(round(width * scale))
@@ -53,10 +53,10 @@ def transform_image_for_vpr(
     return transformed_image
 
 
-def transform_image_for_sp(image: np.ndarray, resize: int):
+def transform_image_for_sp(image: np.ndarray, resize: int, soft: bool = True):
     grayim = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     h, w = grayim.shape[:2]
-    h_new, w_new = get_new_size(h, w, resize)
+    h_new, w_new = get_new_size(h, w, resize, soft)
     grayim = cv2.resize(grayim, (w_new, h_new), interpolation=cv2.INTER_AREA)
     return torch.from_numpy(grayim / 255.0).float()[None, None]
 

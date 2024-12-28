@@ -33,7 +33,7 @@ def benchmark_vpr_system(
         vpr_system: VPRSystem,
         index: IndexSearcher,
         k_closest: int,
-) -> Dict[str, Dict[str, List[float]]]:
+) -> Dict[str, float]:
     """
     Benchmark VPR systems with given dataset and queries
 
@@ -45,16 +45,11 @@ def benchmark_vpr_system(
     :return: Dictionary with time measurements
     """
     time_measurements = {}
-    start = timer()
-    query_global_desc = [np.expand_dims(
-        vpr_system.get_image_descriptor(image), axis=0
-    ) for image in tqdm(queries, desc=" Q descriptors")]
-    time_measurements["global_descs"] = timer() - start
 
     start = timer()
-    for query_global_desc in query_global_desc:
-        index.search(query_global_desc, k_closest)
-    time_measurements["index_search"] = timer() - start
+    for image in tqdm(queries, desc=" Q descriptors"):
+        vpr_system.get_image_descriptor(image)
+    time_measurements["global_descs"] = timer() - start
 
     return time_measurements
 
@@ -78,6 +73,16 @@ def create_local_features(
         local_features.append(feature_matcher.get_feature(image))
     return np.asarray(local_features)
 
+
+def benchmark_feature_detector(queries: Queries, feature_detector) -> Dict[str, float]:
+    time_measurements = {}
+
+    start = timer()
+    for query in tqdm(queries, desc=" Q features"):
+        feature_detector.get_feature(query)
+    time_measurements["feature_extraction"] = timer() - start
+
+    return time_measurements
 
 def benchmark_feature_matcher(
         queries: Queries,
