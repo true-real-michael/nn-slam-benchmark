@@ -340,6 +340,7 @@ net = torch.hub.load(  # Loading the trained model
 net.aggregation[0] = RknnCompatibleL2Norm()  # Replacing the first L2Norm layer
 net.aggregation[4] = RknnCompatibleL2Norm()  # Replacing the second L2Norm layer
 ```
+> It's important to mention that this particular replacement is actually useless because RKNN operates on `float16`, summing which can (and did, in my testing) cause over/underflows, resulting in -inf/+inf values.
 
 This would allow the model to be converted to RKNN format.
 However, this approach is not applicable to trainable layers, as the weights would be lost.
