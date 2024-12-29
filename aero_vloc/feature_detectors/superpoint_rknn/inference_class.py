@@ -3,6 +3,8 @@ import numpy as np
 from typing import Tuple
 from rknnlite.api import RKNNLite
 
+from aero_vloc.utils import transform_image_for_sp
+
 # https://github.com/pytorch/pytorch/blob/f064c5aa33483061a48994608d890b968ae53fb5/aten/src/THNN/generic/SpatialGridSamplerBilinear.c#L62
 def grid_sample(coarse_desc, samp_pts, mode='bilinear'):
     out = np.zeros((coarse_desc.shape[1], samp_pts.shape[2]))
@@ -170,11 +172,13 @@ class SuperPointRknn:
         self.rknn.load_rknn(model_path)
         self.rknn.init_runtime(core_mask=RKNNLite.NPU_CORE_0_1_2)
         self.postprocessor = SuperPointFrontend(resize[0], resize[1], 4, 0.015, 0.7)
+        self.resize = resize
 
     def __del__(self):
         self.rknn.release()
 
     def __call__(self, x):
+        x = transform_image_for_sp(x, self.resize, soft=False)
         x = self.rknn.inference([x])
         pts, desc, heatmap = self.postprocessor.process_pts(x[0], x[1])
         return {
