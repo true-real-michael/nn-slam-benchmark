@@ -32,6 +32,7 @@ __pycache__/
 
 # C extensions
 *.so
+*.dylib
 
 # Distribution / packaging
 .Python
@@ -51,3 +52,5 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+.DS_Store

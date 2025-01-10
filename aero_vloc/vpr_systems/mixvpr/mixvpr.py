@@ -11,16 +11,21 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 import numpy as np
 import torch
 import torchvision
 
 from aero_vloc.utils import transform_image_for_vpr
 from aero_vloc.vpr_systems.vpr_system import VPRSystem
+from aero_vloc.model_conversion.rknn import RknnExportable
 from aero_vloc.vpr_systems.mixvpr.model.mixvpr_model import VPRModel
 
+MIXVPR_RESIZE = 320
 
-class MixVPR(VPRSystem):
+
+class MixVPR(VPRSystem, RknnExportable):
     """
     Implementation of [MixVPR](https://github.com/amaralibey/MixVPR) global localization method.
     """
@@ -45,6 +50,7 @@ class MixVPR(VPRSystem):
                 "out_rows": 4,
             },
         )
+        self.resize = MIXVPR_RESIZE
 
         state_dict = torch.load(ckpt_path)
         self.model.load_state_dict(state_dict)
@@ -54,9 +60,14 @@ class MixVPR(VPRSystem):
     def get_image_descriptor(self, image: np.ndarray):
         # Note that images must be resized to 320x320
         image = transform_image_for_vpr(
-            image, (320, 320), torchvision.transforms.InterpolationMode.BICUBIC
+            image, (self.resize, self.resize), torchvision.transforms.InterpolationMode.BICUBIC
         )[None, :].to(self.device)
         with torch.no_grad():
             descriptor = self.model(image)
         descriptor = descriptor.cpu().numpy()[0]
         return descriptor
+
+    def export_torchscript(self, output: Path):
+        trace = self.model.to_torchscript(method="trace", example_inputs=torch.randn(1, 3, self.resize, self.resize))
+        trace.save(str(output))
+

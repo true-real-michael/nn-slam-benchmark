@@ -33,3 +33,4 @@ class VPRSystem(ABC):
         :return: Descriptor of the image
         """
         pass
+

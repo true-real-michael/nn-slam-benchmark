@@ -19,3 +19,4 @@ from aero_vloc.vpr_systems.netvlad import NetVLAD
 from aero_vloc.vpr_systems.salad import SALAD
 from aero_vloc.vpr_systems.sela import Sela
 from aero_vloc.vpr_systems.vpr_system import VPRSystem
+from aero_vloc.vpr_systems.rknn import RKNN
