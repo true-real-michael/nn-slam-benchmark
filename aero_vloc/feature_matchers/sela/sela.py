@@ -16,10 +16,10 @@ import torch
 
 from pathlib import Path
 
-from aero_vloc.feature_matchers.feature_matcher import FeatureMatcher
-from aero_vloc.feature_matchers.sela.local_similarity import local_sim
-from aero_vloc.utils import transform_image_for_vpr
-from aero_vloc.vpr_systems.sela.network import GeoLocalizationNet
+from nnsb.feature_matchers.feature_matcher import FeatureMatcher
+from nnsb.feature_matchers.sela.local_similarity import local_sim
+from nnsb.utils import transform_image_for_vpr
+from nnsb.vpr_systems.sela.network import GeoLocalizationNet
 
 
 class SelaLocal(FeatureMatcher):

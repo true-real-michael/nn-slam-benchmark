@@ -1,5 +1,5 @@
 from pathlib import Path
-from aero_vloc import CosPlace, EigenPlaces, MixVPR, NetVLAD
+from nnsb import CosPlace, EigenPlaces, MixVPR, NetVLAD
 
 RESIZE = 800
 WEIGHTS = Path('weights')

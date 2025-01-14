@@ -1,4 +1,4 @@
-name: aero-vloc
+name: nn-slam-benchmark
 channels:
   - defaults
   - xformers

@@ -13,8 +13,8 @@
 #  limitations under the License.
 from tqdm import tqdm
 
-from aero_vloc.retrieval_system import RetrievalSystem
-from aero_vloc.dataset import Queries
+from nnsb.retrieval_system import RetrievalSystem
+from nnsb.dataset import Queries
 
 
 class LocalizationPipeline:

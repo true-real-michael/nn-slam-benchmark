@@ -11,5 +11,5 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from aero_vloc.index_searchers.faiss_searcher import FaissSearcher
-from aero_vloc.index_searchers.index_searcher import IndexSearcher
+from nnsb.index_searchers.faiss_searcher import FaissSearcher
+from nnsb.index_searchers.index_searcher import IndexSearcher

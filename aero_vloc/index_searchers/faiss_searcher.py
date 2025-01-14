@@ -14,7 +14,7 @@
 import faiss
 import numpy as np
 
-from aero_vloc.index_searchers.index_searcher import IndexSearcher
+from nnsb.index_searchers.index_searcher import IndexSearcher
 
 
 class FaissSearcher(IndexSearcher):

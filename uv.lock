@@ -19,7 +19,7 @@ wheels = [
 ]
 
 [[package]]
-name = "aero-vloc"
+name = "nn-slam-benchmark"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

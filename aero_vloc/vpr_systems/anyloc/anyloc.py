@@ -18,9 +18,9 @@ import torchvision
 from pathlib import Path
 from torchvision import transforms as tvf
 
-from aero_vloc.utils import transform_image_for_vpr
-from aero_vloc.vpr_systems.vpr_system import VPRSystem
-from aero_vloc.vpr_systems.anyloc.models import DinoV2ExtractFeatures, VLAD
+from nnsb.utils import transform_image_for_vpr
+from nnsb.vpr_systems.vpr_system import VPRSystem
+from nnsb.vpr_systems.anyloc.models import DinoV2ExtractFeatures, VLAD
 
 
 class AnyLoc(VPRSystem):

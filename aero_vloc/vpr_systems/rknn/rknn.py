@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from rknnlite.api import RKNNLite
 
-from aero_vloc.vpr_systems import VPRSystem
+from nnsb.vpr_systems import VPRSystem
 
 
 class RKNN(VPRSystem):

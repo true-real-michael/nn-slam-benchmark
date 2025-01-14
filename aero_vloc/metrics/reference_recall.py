@@ -13,8 +13,8 @@
 #  limitations under the License.
 from typing import Dict, Tuple
 
-from aero_vloc.localization_pipeline import LocalizationPipeline
-from aero_vloc.dataset import Queries
+from nnsb.localization_pipeline import LocalizationPipeline
+from nnsb.dataset import Queries
 
 
 def get_recall(

@@ -11,8 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from aero_vloc.feature_matchers.feature_matcher import FeatureMatcher
-from aero_vloc.feature_matchers.lightglue import LightGlue
-from aero_vloc.feature_matchers.lighterglue import LighterGlue
-from aero_vloc.feature_matchers.superglue import SuperGlue
-from aero_vloc.feature_matchers.sela import SelaLocal
+from nnsb.feature_matchers.feature_matcher import FeatureMatcher
+from nnsb.feature_matchers.lightglue import LightGlue
+from nnsb.feature_matchers.lighterglue import LighterGlue
+from nnsb.feature_matchers.superglue import SuperGlue
+from nnsb.feature_matchers.sela import SelaLocal
