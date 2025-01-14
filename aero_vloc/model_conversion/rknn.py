@@ -4,23 +4,26 @@ from tempfile import NamedTemporaryFile
 
 from rknn.api import RKNN
 
-from aero_vloc.vpr_systems import VPRSystem
 
-
-class RknnExportable(VPRSystem, ABC):
+class TorchScriptExportable(ABC):
     @abstractmethod
     def export_torchscript(self, output: Path):
+        """
+        Export the model to the TorchScript format.
+        :param output: The path to save the model
+        """
         pass
-    
+
+
+class RknnExportable(TorchScriptExportable):
     def export_rknn(self, output: Path, quantization_dataset: Path | None = None):
         """
         Export the model to the RKNN format.
         :param output: The path to save the model
-        :param quantization_dataset: Dataset to quantize the model
         """
         with NamedTemporaryFile(suffix='.pt') as file:
-            self.export_torchscript(Path(file.name))
-            
+            self.export_torchscript(file.name)
+
             input_shape = [1, 3, self.resize, self.resize]
             rknn = RKNN(verbose=True)
             rknn.config(
@@ -30,18 +33,17 @@ class RknnExportable(VPRSystem, ABC):
             )
 
             ret = rknn.load_pytorch(model=file.name, input_size_list=[input_shape])
-
             if ret != 0:
                 raise RuntimeError("Failed to load model")
 
-            if quantization_dataset is not None:
-                ret = rknn.build(do_quantization=True, dataset=quantization_dataset)
-            else:
-                ret = rknn.build(do_quantization=False)
-            if ret != 0:
-                raise RuntimeError("Failed to build model")
+        if quantization_dataset is not None:
+            ret = rknn.build(do_quantization=True, dataset=quantization_dataset)
+        else:
+            ret = rknn.build(do_quantization=False)
+        if ret != 0:
+            raise RuntimeError("Failed to build model")
 
-            ret = rknn.export_rknn(str(output))
-            if ret != 0:
-                raise RuntimeError("Export rknn model failed!")
+        ret = rknn.export_rknn(str(output))
+        if ret != 0:
+            raise RuntimeError("Export rknn model failed!")
 
