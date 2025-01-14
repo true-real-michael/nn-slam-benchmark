@@ -17,10 +17,10 @@ from timeit import default_timer as timer
 from typing import List, Optional, Tuple, Dict
 from tqdm import tqdm
 
-from aero_vloc.feature_matchers import FeatureMatcher
-from aero_vloc.index_searchers import IndexSearcher
-from aero_vloc.vpr_systems import VPRSystem
-from aero_vloc.dataset import Data
+from nnsb.feature_matchers import FeatureMatcher
+from nnsb.index_searchers import IndexSearcher
+from nnsb.vpr_systems import VPRSystem
+from nnsb.dataset import Data
 
 
 class RetrievalSystem:

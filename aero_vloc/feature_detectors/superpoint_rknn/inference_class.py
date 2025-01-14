@@ -3,7 +3,7 @@ import numpy as np
 from typing import Tuple
 from rknnlite.api import RKNNLite
 
-from aero_vloc.utils import transform_image_for_sp
+from nnsb.utils import transform_image_for_sp
 
 # https://github.com/pytorch/pytorch/blob/f064c5aa33483061a48994608d890b968ae53fb5/aten/src/THNN/generic/SpatialGridSamplerBilinear.c#L62
 def grid_sample(coarse_desc, samp_pts, mode='bilinear'):

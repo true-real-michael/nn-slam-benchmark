@@ -13,13 +13,13 @@
 #  limitations under the License.
 
 import numpy as np
-import aero_vloc as avl
+import nnsb
 import pickle
 
 from pathlib import Path
-from aero_vloc.benchmarking import benchmark_feature_matcher, benchmark_vpr_system, create_index, create_local_features
-from aero_vloc.dataset import Data, Queries
-from aero_vloc.retrieval_system import RetrievalSystem
+from nnsb.benchmarking import benchmark_feature_matcher, benchmark_vpr_system, create_index, create_local_features
+from nnsb.dataset import Data, Queries
+from nnsb.retrieval_system import RetrievalSystem
 
 LIMIT = None
 DATASET = "satellite"
@@ -34,10 +34,10 @@ queries = Queries(
 )
 
 feature_matchers = {
-    # 'lightglue': [avl.LightGlue, [800]],
-    # 'superglue': [avl.SuperGlue, ['weights/superglue_outdoor.pth']],
-    # 'lighterglue': [avl.LighterGlue, [800]],
-    'sela': [avl.SelaLocal, ['weights/SelaVPR_msls.pth', 'weights/dinov2_vitl14_pretrain.pth']],
+    # 'lightglue': [nnsb.LightGlue, [800]],
+    # 'superglue': [nnsb.SuperGlue, ['weights/superglue_outdoor.pth']],
+    # 'lighterglue': [nnsb.LighterGlue, [800]],
+    'sela': [nnsb.SelaLocal, ['weights/SelaVPR_msls.pth', 'weights/dinov2_vitl14_pretrain.pth']],
 }
 
 feature_matcher_measurements = {}

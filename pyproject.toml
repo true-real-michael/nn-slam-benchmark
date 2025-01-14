@@ -1,5 +1,5 @@
 [project]
-name = "aero-vloc"
+name = "nn-slam-benchmark"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"

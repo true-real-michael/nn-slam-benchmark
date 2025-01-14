@@ -4,10 +4,10 @@ from random import sample
 
 import numpy as np
 from tqdm import tqdm
-from aero_vloc.dataset import Data, Queries
-from aero_vloc.feature_matchers.feature_matcher import FeatureMatcher
-from aero_vloc.index_searchers.index_searcher import IndexSearcher
-from aero_vloc.vpr_systems.vpr_system import VPRSystem
+from nnsb.dataset import Data, Queries
+from nnsb.feature_matchers.feature_matcher import FeatureMatcher
+from nnsb.index_searchers.index_searcher import IndexSearcher
+from nnsb.vpr_systems.vpr_system import VPRSystem
 
 def create_index(
         dataset: Data,

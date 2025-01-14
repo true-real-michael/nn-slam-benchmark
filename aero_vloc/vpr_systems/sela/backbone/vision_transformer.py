@@ -18,7 +18,7 @@ import torch.nn as nn
 import torch.utils.checkpoint
 from torch.nn.init import trunc_normal_
 
-from aero_vloc.vpr_systems.sela.backbone.dinov2 import (
+from nnsb.vpr_systems.sela.backbone.dinov2 import (
     Mlp,
     PatchEmbed,
     SwiGLUFFNFused,

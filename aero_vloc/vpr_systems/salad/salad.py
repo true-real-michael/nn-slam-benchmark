@@ -16,8 +16,8 @@ import torch
 
 from torchvision import transforms as tvf
 
-from aero_vloc.utils import transform_image_for_vpr
-from aero_vloc.vpr_systems.vpr_system import VPRSystem
+from nnsb.utils import transform_image_for_vpr
+from nnsb.vpr_systems.vpr_system import VPRSystem
 
 
 class SALAD(VPRSystem):

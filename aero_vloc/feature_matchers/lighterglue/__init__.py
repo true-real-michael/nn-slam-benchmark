@@ -1,1 +1,1 @@
-from aero_vloc.feature_matchers.lighterglue.lighterglue import LighterGlue
+from nnsb.feature_matchers.lighterglue.lighterglue import LighterGlue

@@ -1,4 +1,4 @@
-import aero_vloc as avl
+import nnsb as avl
 import numpy as np
 
 from tests.utils import create_localization_pipeline, queries

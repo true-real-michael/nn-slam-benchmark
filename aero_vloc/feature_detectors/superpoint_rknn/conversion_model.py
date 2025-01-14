@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from aero_vloc.model_conversion.rknn import RknnExportable
+from nnsb.model_conversion.rknn import RknnExportable
 
 
 class SuperPoint(nn.Module, RknnExportable):

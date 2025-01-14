@@ -13,13 +13,13 @@
 #  limitations under the License.
 
 import numpy as np
-import aero_vloc as avl
+import nnsb
 import pickle
 
 from pathlib import Path
-from aero_vloc.benchmarking import benchmark_feature_matcher, benchmark_vpr_system, create_index, create_local_features
-from aero_vloc.dataset import Data, Queries
-from aero_vloc.retrieval_system import RetrievalSystem
+from nnsb.benchmarking import benchmark_feature_matcher, benchmark_vpr_system, create_index, create_local_features
+from nnsb.dataset import Data, Queries
+from nnsb.retrieval_system import RetrievalSystem
 
 LIMIT = None
 DATASET = "satellite"
@@ -34,22 +34,22 @@ queries = Queries(
 )
 
 vpr_systems = {
-    # 'anyloc': [avl.AnyLoc, ['weights/anyloc_cluster_centers_aerial.pt']],
-    'cosplace': [avl.CosPlace, []],
-    'eigenplaces': [avl.EigenPlaces, []],
-    'mixvpr': [avl.MixVPR, ['weights/resnet50_MixVPR_4096_channels(1024)_rows(4).ckpt']],
-    'salad': [avl.SALAD, []],
-    'selavpr': [avl.Sela, ['weights/SelaVPR_msls.pth', 'weights/dinov2_vitl14_pretrain.pth']],
-    # 'netvlad': [avl.NetVLAD, ['weights/mapillary_WPCA4096.pth.tar']],
+    # 'anyloc': [nnsb.AnyLoc, ['weights/anyloc_cluster_centers_aerial.pt']],
+    'cosplace': [nnsb.CosPlace, []],
+    'eigenplaces': [nnsb.EigenPlaces, []],
+    'mixvpr': [nnsb.MixVPR, ['weights/resnet50_MixVPR_4096_channels(1024)_rows(4).ckpt']],
+    'salad': [nnsb.SALAD, []],
+    'selavpr': [nnsb.Sela, ['weights/SelaVPR_msls.pth', 'weights/dinov2_vitl14_pretrain.pth']],
+    # 'netvlad': [nnsb.NetVLAD, ['weights/mapillary_WPCA4096.pth.tar']],
 }
 
 
 index_searchers = {
-    'faiss': [avl.FaissSearcher],
+    'faiss': [nnsb.FaissSearcher],
 }
 
-matcher = avl.LightGlue(resize=800)
-index_searcher = avl.FaissSearcher()
+matcher = nnsb.LightGlue(resize=800)
+index_searcher = nnsb.FaissSearcher()
 
 measurements = {}
 
@@ -61,7 +61,7 @@ for vpr_system_name, (method, args) in vpr_systems.items():
         with open(file_path, 'rb') as f:
             index = pickle.load(f)
     else:
-        index = avl.FaissSearcher()
+        index = nnsb.FaissSearcher()
         create_index(test_ds, vpr_system, index)
         with open(file_path, 'wb') as f:
             pickle.dump(index, f)

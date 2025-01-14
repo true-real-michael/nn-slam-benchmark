@@ -17,7 +17,7 @@ import torch.nn.functional as F
 from torch import nn
 from torch.nn.parameter import Parameter
 
-from aero_vloc.vpr_systems.sela.backbone.vision_transformer import vit_large
+from nnsb.vpr_systems.sela.backbone.vision_transformer import vit_large
 
 
 class GeM(nn.Module):

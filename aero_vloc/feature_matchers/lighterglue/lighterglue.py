@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from aero_vloc.feature_matchers.feature_matcher import FeatureMatcher
+from nnsb.feature_matchers.feature_matcher import FeatureMatcher
 
 
 class LighterGlue(FeatureMatcher):

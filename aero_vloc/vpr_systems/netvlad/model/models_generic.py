@@ -19,7 +19,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 
-from aero_vloc.vpr_systems.netvlad.model.layers import NetVLADModule
+from nnsb.vpr_systems.netvlad.model.layers import NetVLADModule
 
 
 class Flatten(nn.Module):

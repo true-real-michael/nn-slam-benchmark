@@ -16,12 +16,12 @@ import torch
 
 from tqdm import tqdm
 
-from aero_vloc.feature_detectors import SuperPoint
-from aero_vloc.feature_matchers import FeatureMatcher
-from aero_vloc.feature_matchers.lightglue.model.lightglue_matcher import (
+from nnsb.feature_detectors import SuperPoint
+from nnsb.feature_matchers import FeatureMatcher
+from nnsb.feature_matchers.lightglue.model.lightglue_matcher import (
     LightGlueMatcher,
 )
-from aero_vloc.utils import transform_image_for_sp
+from nnsb.utils import transform_image_for_sp
 
 
 class LightGlue(FeatureMatcher):
