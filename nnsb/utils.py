@@ -26,8 +26,7 @@ def get_new_size(height: int, width: int, resize: int, soft: bool):
     if soft and scale >= 1:
         return height, width
     else:
-        height_new, width_new = int(round(height * scale)), int(round(width * scale))
-        return height_new, width_new
+        return resize, resize
 
 
 def transform_image_for_vpr(
