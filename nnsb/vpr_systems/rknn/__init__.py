@@ -1,1 +1,1 @@
-from rknn import RKNN
+from .rknn import RKNN
