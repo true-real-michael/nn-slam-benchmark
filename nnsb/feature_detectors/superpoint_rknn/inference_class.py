@@ -1,6 +1,7 @@
-import torch
-import numpy as np
 from typing import Tuple
+
+import numpy as np
+import torch
 from rknnlite.api import RKNNLite
 
 from nnsb.utils import transform_image_for_sp
@@ -181,7 +182,7 @@ class SuperPointRknn:
         self.rknn.release()
 
     def __call__(self, x):
-        x = transform_image_for_sp(x, self.resize, soft=False).numpy()
+        x = transform_image_for_sp(x, self.resize).numpy()
         x = self.rknn.inference([x])
         pts, desc, heatmap = self.postprocessor.process_pts(x[0], x[1])
         return {
