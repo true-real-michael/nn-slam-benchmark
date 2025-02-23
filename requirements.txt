@@ -1,7 +1,6 @@
 einops==0.7.0
 faiss_cpu==1.7.4
 fast_pytorch_kmeans==0.2.0.1
-geopy==2.4.0
 numpy==1.26.1
 opencv_python==4.8.1.78
 Pillow==10.1.0
