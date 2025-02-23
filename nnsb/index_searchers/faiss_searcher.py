@@ -14,6 +14,7 @@
 import faiss
 import numpy as np
 
+from typing import List
 from nnsb.index_searchers.index_searcher import IndexSearcher
 
 
@@ -26,7 +27,7 @@ class FaissSearcher(IndexSearcher):
         self.faiss_index = faiss.IndexFlatL2(descriptors.shape[1])
         self.faiss_index.add(descriptors)
 
-    def search(self, descriptor: np.ndarray, k_closest: int) -> list[int]:
+    def search(self, descriptor: np.ndarray, k_closest: int) -> List[int]:
         _, global_predictions_indices = self.faiss_index.search(descriptor, k_closest)
         global_predictions_indices = global_predictions_indices[0]
 

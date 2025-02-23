@@ -13,6 +13,7 @@
 #  limitations under the License.
 from tqdm import tqdm
 
+from typing import List, Optional, Tuple
 from nnsb.retrieval_system import RetrievalSystem
 from nnsb.dataset import Queries
 
@@ -37,8 +38,7 @@ class LocalizationPipeline:
         self,
         query_seq: Queries,
         k_closest: int,
-        # ) -> list[Optional[Tuple[float, float]]]:
-    ) -> list[int]:
+    ) -> List[Optional[Tuple[float, float]]]:
         """
         Calculates UAV locations using the retrieval system.
 

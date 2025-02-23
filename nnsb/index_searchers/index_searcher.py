@@ -14,6 +14,7 @@
 import numpy as np
 
 
+from typing import List
 from abc import ABC, abstractmethod
 
 
@@ -31,7 +32,7 @@ class IndexSearcher(ABC):
         pass
 
     @abstractmethod
-    def search(self, descriptor: np.ndarray, k_closest: int) -> list[int]:
+    def search(self, descriptor: np.ndarray, k_closest: int) -> List[int]:
         """
         Finds the index of the matched database descriptor
         :param descriptor: Query descriptor

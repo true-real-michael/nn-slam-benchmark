@@ -66,7 +66,7 @@ class RetrievalSystem:
             self,
             images,
             vpr_k_closest: int,
-            feature_matcher_k_closest: int | None,
+            feature_matcher_k_closest: Optional[int],
     ) -> List[Tuple[list, Optional[list], Optional[list]]]:
         start = timer()
         query_global_desc = [np.expand_dims(
@@ -100,7 +100,7 @@ class RetrievalSystem:
         self,
         image,
         vpr_k_closest: int,
-        feature_matcher_k_closest: int | None,
+        feature_matcher_k_closest: Optional[int],
     ) -> Tuple[list, Optional[list], Optional[list]]:
         """
         Retrieves the best matching images using the VPR system and keypoint matcher.

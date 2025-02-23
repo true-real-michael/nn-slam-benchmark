@@ -15,11 +15,11 @@ import numpy as np
 import torch
 
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Tuple, Optional
 
 
 class FeatureMatcher(ABC):
-    def __init__(self, resize: int | Tuple[int, int], gpu_index: int = 0):
+    def __init__(self, resize: Optional[Tuple[int, int]], gpu_index: int = 0):
         self.resize = resize
         self.device = f"cuda:{gpu_index}" if torch.cuda.is_available() else "cpu"
         print('Running inference on device "{}"'.format(self.device))
