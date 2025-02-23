@@ -1,9 +1,10 @@
 import torch
 from torch import nn
-from nnsb.model_conversion.rknn import RknnExportable
+
+from nnsb.model_conversion.torchscript import TorchScriptExportable
 
 
-class SuperPoint(nn.Module, RknnExportable):
+class SuperPoint(nn.Module, TorchScriptExportable):
     def __init__(self, resize: int = 800):
         super(SuperPoint, self).__init__()
         self.relu = nn.ReLU(inplace=True)
@@ -56,6 +57,7 @@ class SuperPoint(nn.Module, RknnExportable):
         return semi, desc
 
     def export_torchscript(self, output):
-        trace_model = torch.jit.trace(self, torch.Tensor(1, 1, self.resize, self.resize))
+        trace_model = torch.jit.trace(
+            self, torch.Tensor(1, 1, self.resize, self.resize)
+        )
         trace_model.save(output)
-

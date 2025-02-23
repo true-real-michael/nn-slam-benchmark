@@ -12,9 +12,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from pathlib import Path
+
 import numpy as np
 import torch
 
+from nnsb.model_conversion.torchscript import TorchScriptExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.netvlad.model.models_generic import (
     get_backend,
@@ -22,10 +24,9 @@ from nnsb.vpr_systems.netvlad.model.models_generic import (
     get_pca_encoding,
 )
 from nnsb.vpr_systems.vpr_system import VPRSystem
-from nnsb.model_conversion.rknn import RknnExportable
 
 
-class NetVLAD(VPRSystem, RknnExportable):
+class NetVLAD(VPRSystem, TorchScriptExportable):
     """
     Implementation of [NetVLAD](https://github.com/QVPR/Patch-NetVLAD) global localization method.
     """
@@ -76,14 +77,16 @@ class NetVLAD(VPRSystem, RknnExportable):
 
         cpu = torch.device("cpu")
 
-        unified = torch.nn.Sequential(
-            self.model.encoder,
-            self.model.pool,
-            Unsqueeze().eval().to(self.device),
-            self.model.WPCA,
-        ).eval().to(cpu)
-        trace = torch.jit.trace(
-            unified, torch.Tensor(1, 3, self.resize, self.resize)
+        unified = (
+            torch.nn.Sequential(
+                self.model.encoder,
+                self.model.pool,
+                Unsqueeze().eval().to(self.device),
+                self.model.WPCA,
+            )
+            .eval()
+            .to(cpu)
         )
+        trace = torch.jit.trace(unified, torch.Tensor(1, 3, self.resize, self.resize))
 
         trace.save(str(output))

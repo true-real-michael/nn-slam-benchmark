@@ -12,15 +12,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from pathlib import Path
+
 import numpy as np
 import torch
 
+from nnsb.model_conversion.torchscript import TorchScriptExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.vpr_system import VPRSystem
-from nnsb.model_conversion.rknn import RknnExportable
 
 
-class CosPlace(VPRSystem, RknnExportable):
+class CosPlace(VPRSystem, TorchScriptExportable):
     """
     Implementation of [CosPlace](https://github.com/gmberton/CosPlace) global localization method.
     """
@@ -57,8 +58,9 @@ class CosPlace(VPRSystem, RknnExportable):
             descriptor = self.model(image)
         descriptor = descriptor.cpu().numpy()[0]
         return descriptor
-    
+
     def export_torchscript(self, output: Path):
-        trace = torch.jit.trace(self.model, torch.Tensor(1, 3, self.resize, self.resize).to(self.device))
+        trace = torch.jit.trace(
+            self.model, torch.Tensor(1, 3, self.resize, self.resize).to(self.device)
+        )
         trace.save(str(output))
-    

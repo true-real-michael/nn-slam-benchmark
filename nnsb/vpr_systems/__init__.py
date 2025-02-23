@@ -11,12 +11,4 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from nnsb.vpr_systems.anyloc import AnyLoc
-from nnsb.vpr_systems.cosplace import CosPlace
-from nnsb.vpr_systems.eigenplaces import EigenPlaces
-from nnsb.vpr_systems.mixvpr import MixVPR
-from nnsb.vpr_systems.netvlad import NetVLAD
-from nnsb.vpr_systems.salad import SALAD
-from nnsb.vpr_systems.sela import Sela
 from nnsb.vpr_systems.vpr_system import VPRSystem
-from nnsb.vpr_systems.rknn import RKNN

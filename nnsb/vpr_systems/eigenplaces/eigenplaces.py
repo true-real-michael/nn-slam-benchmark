@@ -12,16 +12,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from pathlib import Path
-from tempfile import NamedTemporaryFile
+
 import numpy as np
 import torch
 
+from nnsb.model_conversion.torchscript import TorchScriptExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.vpr_system import VPRSystem
-from nnsb.model_conversion.rknn import RknnExportable
 
 
-class EigenPlaces(VPRSystem, RknnExportable):
+class EigenPlaces(VPRSystem, TorchScriptExportable):
     """
     Implementation of [EigenPlaces](https://github.com/gmberton/EigenPlaces) global localization method.
     """
@@ -60,6 +60,7 @@ class EigenPlaces(VPRSystem, RknnExportable):
         return descriptor
 
     def export_torchscript(self, output: Path):
-        trace = torch.jit.trace(self.model, torch.Tensor(1, 3, self.resize, self.resize).to(self.device))
+        trace = torch.jit.trace(
+            self.model, torch.Tensor(1, 3, self.resize, self.resize).to(self.device)
+        )
         trace.save(str(output))
-    
