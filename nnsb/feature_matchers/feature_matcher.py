@@ -11,17 +11,17 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from abc import ABC, abstractmethod
+from typing import Optional
+
 import numpy as np
 import torch
 
-from abc import ABC, abstractmethod
-from typing import Tuple, Optional
-
 
 class FeatureMatcher(ABC):
-    def __init__(self, resize: Optional[Tuple[int, int]], gpu_index: int = 0):
+    def __init__(self, resize: Optional[int]):
         self.resize = resize
-        self.device = f"cuda:{gpu_index}" if torch.cuda.is_available() else "cpu"
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print('Running inference on device "{}"'.format(self.device))
 
     @abstractmethod

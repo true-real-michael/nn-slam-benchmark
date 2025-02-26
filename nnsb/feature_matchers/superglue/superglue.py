@@ -48,9 +48,7 @@ import torch
 
 from nnsb.feature_detectors import SuperPoint
 from nnsb.feature_matchers.feature_matcher import FeatureMatcher
-from nnsb.feature_matchers.superglue.model.superglue_matcher import (
-    SuperGlueMatcher,
-)
+from nnsb.feature_matchers.superglue.model.superglue_matcher import SuperGlueMatcher
 from nnsb.utils import transform_image_for_sp
 
 
@@ -79,7 +77,7 @@ class SuperGlue(FeatureMatcher):
             features = self.super_point({"image": inp})
         features = {k: v.to("cpu") for k, v in features.items()}
         features["shape"] = shape
-        return features
+        return {k: v.cpu().numpy() for k, v in features.items()}
 
     def match_feature(self, query_features, db_features, k_best):
         num_matches = []
@@ -89,18 +87,20 @@ class SuperGlue(FeatureMatcher):
         for db_index, db_feature in enumerate(db_features):
             keys = ["keypoints", "scores", "descriptors"]
             pred = {
-                k + "0": (v.to(self.device) if k in keys else v)
+                k + "0": (torch.tensor(v).to(self.device) if k in keys else v)
                 for k, v in query_features.items()
             }
             pred = {
                 **pred,
                 **{
-                    k + "1": (v.to(self.device) if k in keys else v)
+                    k + "1": (torch.tensor(v).to(self.device) if k in keys else v)
                     for k, v in db_feature.items()
                 },
             }
             kpts0 = pred["keypoints0"][0].cpu().numpy()
             kpts1 = pred["keypoints1"][0].cpu().numpy()
+            pred["shape0"] = torch.tensor((self.resize, self.resize)).to(self.device)
+            pred["shape1"] = torch.tensor((self.resize, self.resize)).to(self.device)
 
             with torch.no_grad():
                 pred = self.super_glue_matcher(pred)

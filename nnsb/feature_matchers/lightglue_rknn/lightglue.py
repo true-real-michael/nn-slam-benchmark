@@ -1,9 +1,8 @@
-import sys
-import torch
-from torch.nn import functional as F
-import numpy as np
-from rknnlite.api import RKNNLite
 from pathlib import Path
+
+import torch
+from rknnlite.api import RKNNLite
+from torch.nn import functional as F
 
 
 def normalize_keypoints(

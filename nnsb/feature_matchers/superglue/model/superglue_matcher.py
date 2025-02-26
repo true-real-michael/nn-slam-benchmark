@@ -43,11 +43,11 @@
 # %AUTHORS_END%
 # --------------------------------------------------------------------*/
 # %BANNER_END%
-import torch
-
 from copy import deepcopy
-from torch import nn
 from typing import List, Tuple
+
+import torch
+from torch import nn
 
 
 def MLP(channels: List[int], do_bn: bool = True) -> nn.Module:

@@ -17,11 +17,11 @@ class LighterGlue(FeatureMatcher):
         for db_index, db_feature in enumerate(db_features):
             keys = ["keypoints", "scores", "descriptors"]
             query_features = {
-                k: (v.to(self.device) if k in keys else v)
+                k: (torch.tensor(v).to(self.device) if k in keys else v)
                 for k, v in query_features.items()
             }
             db_feature = {
-                k: (v.to(self.device) if k in keys else v)
+                k: (torch.tensor(v).to(self.device) if k in keys else v)
                 for k, v in db_feature.items()
             }
             matches = self.xfeat.match_lighterglue(

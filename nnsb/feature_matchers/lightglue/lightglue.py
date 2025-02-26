@@ -14,13 +14,9 @@
 import numpy as np
 import torch
 
-from tqdm import tqdm
-
 from nnsb.feature_detectors import SuperPoint
 from nnsb.feature_matchers import FeatureMatcher
-from nnsb.feature_matchers.lightglue.model.lightglue_matcher import (
-    LightGlueMatcher,
-)
+from nnsb.feature_matchers.lightglue.model.lightglue_matcher import LightGlueMatcher
 from nnsb.utils import transform_image_for_sp
 
 
@@ -30,12 +26,11 @@ class LightGlue(FeatureMatcher):
     matcher with SuperPoint extractor.
     """
 
-    def __init__(self, resize: int = 800, gpu_index: int = 0):
+    def __init__(self, resize: int = 800):
         """
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
-        :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(resize, gpu_index)
+        super().__init__(resize)
         self.super_point = SuperPoint().eval().to(self.device)
         self.light_glue_matcher = (
             LightGlueMatcher(features="superpoint").eval().to(self.device)
@@ -49,7 +44,7 @@ class LightGlue(FeatureMatcher):
         feats["descriptors"] = feats["descriptors"].transpose(-1, -2).contiguous()
         feats = {k: v.to("cpu") for k, v in feats.items()}
         feats["image_size"] = torch.tensor(shape)[None].to(img).float()
-        return feats
+        return {k: v.cpu().numpy() for k, v in feats.items()}
 
     def match_feature(self, query_features, db_features, k_best):
         num_matches = []
@@ -59,13 +54,19 @@ class LightGlue(FeatureMatcher):
         for db_index, db_feature in enumerate(db_features):
             keys = ["keypoints", "scores", "descriptors"]
             query_features = {
-                k: (v.to(self.device) if k in keys else v)
+                k: (torch.tensor(v).to(self.device) if k in keys else v)
                 for k, v in query_features.items()
             }
             db_feature = {
-                k: (v.to(self.device) if k in keys else v)
+                k: (torch.tensor(v).to(self.device) if k in keys else v)
                 for k, v in db_feature.items()
             }
+            db_feature["descriptors"] = (
+                db_feature["descriptors"].transpose(-1, -2).contiguous()
+            )
+            query_features["descriptors"] = (
+                query_features["descriptors"].transpose(-1, -2).contiguous()
+            )
             matches = self.light_glue_matcher(
                 {"image0": query_features, "image1": db_feature}
             )

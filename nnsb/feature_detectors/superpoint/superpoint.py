@@ -13,5 +13,4 @@ class SuperPoint:
         image = transform_image_for_sp(image, self.resize).to(self.device)
         with torch.no_grad():
             result = self.model({"image": image})
-        result["descriptors"] = result["descriptors"].transpose(-1, -2).contiguous()
         return {k: v.cpu().numpy() for k, v in result.items()}
