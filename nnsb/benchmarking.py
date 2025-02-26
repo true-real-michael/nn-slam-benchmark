@@ -1,46 +1,23 @@
-from timeit import default_timer as timer
-from typing import Dict, List
 from random import sample
+from timeit import default_timer as timer
+from typing import Any, Dict, List, Tuple
 
-import numpy as np
 from tqdm import tqdm
-from nnsb.dataset import Data, Queries
+
+from nnsb.dataset import Queries
 from nnsb.feature_matchers.feature_matcher import FeatureMatcher
-from nnsb.index_searchers.index_searcher import IndexSearcher
 from nnsb.vpr_systems.vpr_system import VPRSystem
-
-
-def create_index(
-    dataset: Data,
-    vpr_system: VPRSystem,
-    index_searcher: IndexSearcher,
-) -> None:
-    """
-    Create index for given dataset
-
-    :param dataset: Data object
-    :param vpr_system: VPR system
-    :param index_searcher: Index searcher
-    """
-    global_descs = []
-    for image in tqdm(dataset, desc="DB descriptors"):
-        global_descs.append(vpr_system.get_image_descriptor(image))
-    index_searcher.create(np.asarray(global_descs))
 
 
 def benchmark_vpr_system(
     queries: Queries,
     vpr_system: VPRSystem,
-    index: IndexSearcher,
-    k_closest: int,
 ) -> Dict[str, float]:
     """
     Benchmark VPR systems with given dataset and queries
 
     :param queries: Queries object
-    :param vpr_systems: List of VPR systems
-    :param index: Index searcher
-    :param k_closest: Number of closest images to return
+    :param vpr_systems: VPR system
 
     :return: Dictionary with time measurements
     """
@@ -54,33 +31,18 @@ def benchmark_vpr_system(
     return time_measurements
 
 
-def create_local_features(
-    dataset: Data,
-    feature_matcher,
-) -> np.ndarray:
-    """
-    Create local features for given dataset
-
-    :param dataset: Data object
-    :param feature_matcher: Feature matcher
-
-    :return: Local features
-    """
-    local_features = []
-    for i, image in enumerate(tqdm(dataset, desc="DB features")):
-        local_features.append(feature_matcher.get_feature(image))
-    return np.asarray(local_features)
-
-
-def benchmark_feature_detector(queries: Queries, feature_detector) -> Dict[str, float]:
+def benchmark_feature_detector(
+    queries: Queries, feature_detector
+) -> Tuple[Dict[str, float], List[Any]]:
     time_measurements = {}
+    features = []
 
     start = timer()
     for query in tqdm(queries, desc=" Q features"):
-        feature_detector(query)
+        features.append(feature_detector(query))
     time_measurements["feature_extraction"] = timer() - start
 
-    return time_measurements
+    return time_measurements, features
 
 
 def benchmark_feature_matcher(
