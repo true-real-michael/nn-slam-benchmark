@@ -60,12 +60,16 @@ def get_model(
     use_vladv2=False,
     append_pca_layer=False,
     num_pcs=8192,
+    use_faiss=False,
 ):
     nn_model = nn.Module()
     nn_model.add_module("encoder", encoder)
 
     net_vlad = NetVLADModule(
-        num_clusters=num_clusters, dim=encoder_dim, vladv2=use_vladv2
+        num_clusters=num_clusters,
+        dim=encoder_dim,
+        vladv2=use_vladv2,
+        use_faiss=use_faiss,
     )
     nn_model.add_module("pool", net_vlad)
     if append_pca_layer:

@@ -21,8 +21,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from sklearn.neighbors import NearestNeighbors
-
 
 class NetVLADModule(nn.Module):
     """NetVLAD layer implementation"""
@@ -71,6 +69,8 @@ class NetVLADModule(nn.Module):
             self.conv.bias = None
         else:
             if not self.use_faiss:
+                from sklearn.neighbors import NearestNeighbors
+
                 knn = NearestNeighbors(n_jobs=-1)
                 knn.fit(traindescs)
                 del traindescs

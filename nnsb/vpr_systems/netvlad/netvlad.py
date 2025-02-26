@@ -31,13 +31,15 @@ class NetVLAD(VPRSystem, TorchScriptExportable):
     Implementation of [NetVLAD](https://github.com/QVPR/Patch-NetVLAD) global localization method.
     """
 
-    def __init__(self, path_to_weights: str, resize: int = 800, gpu_index: int = 0):
+    def __init__(
+        self, path_to_weights: str, resize: int = 800, use_faiss: bool = False
+    ):
         """
         :param path_to_weights: Path to the weights
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
         :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(gpu_index)
+        super().__init__()
         self.resize = resize
         encoder_dim, encoder = get_backend()
 
@@ -52,6 +54,7 @@ class NetVLAD(VPRSystem, TorchScriptExportable):
             num_clusters,
             append_pca_layer=True,
             num_pcs=num_pcs,
+            use_faiss=use_faiss,
         )
         self.model.load_state_dict(checkpoint["state_dict"])
         self.model = self.model.to(self.device)
