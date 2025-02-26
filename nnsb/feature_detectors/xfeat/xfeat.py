@@ -14,8 +14,10 @@ class XFeat:
         self.xfeat = self.xfeat.to(self.device).eval()
 
     def __call__(self, image: np.ndarray):
+        shape = image.shape[:2][::-1]
         image = transform_image_for_sp(image, self.resize)
         with torch.no_grad():
-            output = self.xfeat.detectAndCompute(image.to(self.device), top_k=4096)[0]
-        output.update({"image_size": (image.shape[1], image.shape[0])})
-        return output
+            result = self.xfeat.detectAndCompute(image.to(self.device), top_k=4096)[0]
+        result = {k: v.cpu().numpy() for k, v in result.items()}
+        result.update({"image_size": shape})
+        return result

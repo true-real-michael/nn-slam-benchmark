@@ -12,26 +12,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from abc import ABC, abstractmethod
-from typing import Optional
 
-import numpy as np
 import torch
 
 
 class FeatureMatcher(ABC):
-    def __init__(self, resize: Optional[int]):
-        self.resize = resize
+    def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print('Running inference on device "{}"'.format(self.device))
-
-    @abstractmethod
-    def get_feature(self, image: np.ndarray):
-        """
-        Gets features of RGB image given
-        :param image: The image for which features should be calculated in OpenCV format
-        :return: Features for image
-        """
-        pass
 
     @abstractmethod
     def match_feature(self, query_features, db_features, k_best):

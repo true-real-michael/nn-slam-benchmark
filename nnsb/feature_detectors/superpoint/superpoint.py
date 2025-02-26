@@ -1,4 +1,5 @@
 import torch
+
 from nnsb.feature_detectors.superpoint.model import SuperPoint as Model
 from nnsb.utils import transform_image_for_sp
 
@@ -10,7 +11,9 @@ class SuperPoint:
         self.model = Model().to(self.device).eval()
 
     def __call__(self, image):
+        shape = image.shape[:2][::-1]
         image = transform_image_for_sp(image, self.resize).to(self.device)
         with torch.no_grad():
             result = self.model({"image": image})
+        result["image_size"] = torch.tensor(shape).to(image).float()
         return {k: v.cpu().numpy() for k, v in result.items()}

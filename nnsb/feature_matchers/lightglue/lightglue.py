@@ -14,10 +14,8 @@
 import numpy as np
 import torch
 
-from nnsb.feature_detectors import SuperPoint
 from nnsb.feature_matchers import FeatureMatcher
 from nnsb.feature_matchers.lightglue.model.lightglue_matcher import LightGlueMatcher
-from nnsb.utils import transform_image_for_sp
 
 
 class LightGlue(FeatureMatcher):
@@ -26,25 +24,14 @@ class LightGlue(FeatureMatcher):
     matcher with SuperPoint extractor.
     """
 
-    def __init__(self, resize: int = 800):
+    def __init__(self):
         """
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
         """
-        super().__init__(resize)
-        self.super_point = SuperPoint().eval().to(self.device)
+        super().__init__()
         self.light_glue_matcher = (
             LightGlueMatcher(features="superpoint").eval().to(self.device)
         )
-
-    def get_feature(self, image: np.ndarray):
-        img = transform_image_for_sp(image, self.resize).to(self.device)
-        shape = img.shape[-2:][::-1]
-        with torch.no_grad():
-            feats = self.super_point({"image": img})
-        feats["descriptors"] = feats["descriptors"].transpose(-1, -2).contiguous()
-        feats = {k: v.to("cpu") for k, v in feats.items()}
-        feats["image_size"] = torch.tensor(shape)[None].to(img).float()
-        return {k: v.cpu().numpy() for k, v in feats.items()}
 
     def match_feature(self, query_features, db_features, k_best):
         num_matches = []

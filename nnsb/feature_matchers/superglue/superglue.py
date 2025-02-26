@@ -46,10 +46,8 @@
 import numpy as np
 import torch
 
-from nnsb.feature_detectors import SuperPoint
 from nnsb.feature_matchers.feature_matcher import FeatureMatcher
 from nnsb.feature_matchers.superglue.model.superglue_matcher import SuperGlueMatcher
-from nnsb.utils import transform_image_for_sp
 
 
 class SuperGlue(FeatureMatcher):
@@ -58,26 +56,16 @@ class SuperGlue(FeatureMatcher):
     matcher with SuperPoint extractor.
     """
 
-    def __init__(self, path_to_sg_weights, resize=800, gpu_index: int = 0):
+    def __init__(self, path_to_sg_weights):
         """
         :param path_to_sg_weights: Path to SuperGlue weights
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
         :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(resize, gpu_index)
-        self.super_point = SuperPoint().eval().to(self.device)
+        super().__init__()
         self.super_glue_matcher = (
             SuperGlueMatcher(path_to_sg_weights).eval().to(self.device)
         )
-
-    def get_feature(self, image: np.ndarray):
-        inp = transform_image_for_sp(image, self.resize).to(self.device)
-        shape = inp.shape[2:]
-        with torch.no_grad():
-            features = self.super_point({"image": inp})
-        features = {k: v.to("cpu") for k, v in features.items()}
-        features["shape"] = shape
-        return {k: v.cpu().numpy() for k, v in features.items()}
 
     def match_feature(self, query_features, db_features, k_best):
         num_matches = []
@@ -99,8 +87,8 @@ class SuperGlue(FeatureMatcher):
             }
             kpts0 = pred["keypoints0"][0].cpu().numpy()
             kpts1 = pred["keypoints1"][0].cpu().numpy()
-            pred["shape0"] = torch.tensor((self.resize, self.resize)).to(self.device)
-            pred["shape1"] = torch.tensor((self.resize, self.resize)).to(self.device)
+            pred["shape0"] = query_features["image_size"]
+            pred["shape1"] = db_feature["image_size"]
 
             with torch.no_grad():
                 pred = self.super_glue_matcher(pred)
