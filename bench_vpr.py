@@ -12,63 +12,58 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import numpy as np
-import nnsb
 import pickle
-
+from collections import defaultdict
 from pathlib import Path
-from nnsb.benchmarking import benchmark_feature_matcher, benchmark_vpr_system, create_index, create_local_features
-from nnsb.dataset import Data, Queries
-from nnsb.retrieval_system import RetrievalSystem
+
+from nnsb.benchmarking import benchmark_vpr_system
+from nnsb.dataset import Queries
+from nnsb.vpr_systems.cosplace.cosplace import CosPlace
+from nnsb.vpr_systems.eigenplaces.eigenplaces import EigenPlaces
+from nnsb.vpr_systems.netvlad.netvlad import NetVLAD
 
 LIMIT = None
-DATASET = "satellite"
-BOARD = "orin3"
+DATASET = "st_lucia"
+BOARD = "nano1"
+RESIZE = 800
 
-test_ds = Data(Path("datasets"), DATASET, limit=LIMIT, gt=False)
-queries = Queries(
-    Path("datasets"),
-    DATASET,
-    knn=None,
-    limit=LIMIT
-)
+queries = Queries(Path("datasets"), DATASET, knn=None, limit=LIMIT)
 
-vpr_systems = {
-    # 'anyloc': [nnsb.AnyLoc, ['weights/anyloc_cluster_centers_aerial.pt']],
-    'cosplace': [nnsb.CosPlace, []],
-    'eigenplaces': [nnsb.EigenPlaces, []],
-    'mixvpr': [nnsb.MixVPR, ['weights/resnet50_MixVPR_4096_channels(1024)_rows(4).ckpt']],
-    'salad': [nnsb.SALAD, []],
-    'selavpr': [nnsb.Sela, ['weights/SelaVPR_msls.pth', 'weights/dinov2_vitl14_pretrain.pth']],
-    # 'netvlad': [nnsb.NetVLAD, ['weights/mapillary_WPCA4096.pth.tar']],
-}
+vpr_systems = {}
+
+for resize in [800, 600, 400, 300, 200]:
+    vpr_systems.update(
+        {
+            f"netvlad_{resize}": [
+                NetVLAD,
+                ["weights/mapillary_WPCA4096.pth.tar"],
+                {"resize": resize, "use_faiss": True},
+            ],
+        }
+    )
+for resize in [800, 600, 400, 300, 200]:
+    vpr_systems.update(
+        {
+            f"cosplace_{resize}": [CosPlace, [], {"resize": resize}],
+        }
+    )
+for resize in [800, 600, 400, 300, 200]:
+    vpr_systems.update(
+        {
+            f"eigenplaces_{resize}": [EigenPlaces, [], {"resize": resize}],
+        }
+    )
 
 
-index_searchers = {
-    'faiss': [nnsb.FaissSearcher],
-}
+measurements = defaultdict(dict)
 
-matcher = nnsb.LightGlue(resize=800)
-index_searcher = nnsb.FaissSearcher()
+for vpr_system_name, (method, args, kwargs) in vpr_systems.items():
+    print("Processing", vpr_system_name)
+    vpr_system = method(*args, **kwargs)
+    measurements[vpr_system_name] = benchmark_vpr_system(queries, vpr_system)
+    del vpr_system
 
-measurements = {}
-
-for vpr_system_name, (method, args) in vpr_systems.items():
-    print('Processing', vpr_system_name)
-    file_path = f'cache/index_{DATASET}_{vpr_system_name}.pkl'
-    vpr_system = method(*args)
-    if Path(file_path).exists():
-        with open(file_path, 'rb') as f:
-            index = pickle.load(f)
-    else:
-        index = nnsb.FaissSearcher()
-        create_index(test_ds, vpr_system, index)
-        with open(file_path, 'wb') as f:
-            pickle.dump(index, f)
-    measurements[vpr_system_name] = benchmark_vpr_system(queries, vpr_system, index, 10)
-    del vpr_system, index
-
-output_file = Path(f'measurements/{BOARD}/{DATASET}_vpr.pkl')
+output_file = Path(f"measurements/{BOARD}/{DATASET}_vpr.pkl")
 output_file.parent.mkdir(parents=True, exist_ok=True)
-with open(output_file , 'wb') as f:
+with open(output_file, "wb") as f:
     pickle.dump(measurements, f)
