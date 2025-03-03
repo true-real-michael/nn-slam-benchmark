@@ -1,10 +1,10 @@
 from pathlib import Path
 from onnxruntime import InferenceSession
 
-from .runner import Runner
+from nnsb.backend.backend import Backend
 
 
-class OnnxRunner(Runner):
+class OnnxBackend(Backend):
     def __init__(self, model_path: Path):
         self.session = InferenceSession(
             model_path, providers=["CUDAExecutionProvider", "CPUExecutionProvider"]

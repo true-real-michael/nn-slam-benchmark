@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 
-class Runner(ABC):
+class Backend(ABC):
     @abstractmethod
     def __call__(self, x: np.ndarray):
         pass

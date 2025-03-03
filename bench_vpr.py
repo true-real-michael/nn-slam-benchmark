@@ -18,11 +18,11 @@ from pathlib import Path
 
 from nnsb.benchmarking import benchmark_vpr_system
 from nnsb.dataset import Queries
-from nnsb.runner.onnx import OnnxRunner
+from nnsb.backend.torchscript import TorchscriptBackend
 from nnsb.vpr_systems.cosplace.cosplace import CosPlace
 from nnsb.vpr_systems.eigenplaces.eigenplaces import EigenPlaces
 from nnsb.vpr_systems.netvlad.netvlad import NetVLAD
-from nnsb.vpr_systems.mixvpr.mixvpr_with_runner import MixVPR
+from nnsb.vpr_systems.mixvpr.mixvpr_with_backend import MixVPR
 
 LIMIT = None
 DATASET = "st_lucia"
@@ -58,7 +58,11 @@ vpr_systems = {}
 
 vpr_systems.update(
     {
-        "mixvpr": [MixVPR, ["weights/onnx/300/mixvpr.onnx", OnnxRunner], {}],
+        "mixvpr": [
+            MixVPR,
+            ["weights/torchscript/300/mixvpr.pt", TorchscriptBackend],
+            {},
+        ],
     }
 )
 

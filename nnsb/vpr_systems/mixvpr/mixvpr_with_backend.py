@@ -10,8 +10,8 @@ MIXVPR_RESIZE = 320
 
 
 class MixVPR(VPRSystem):
-    def __init__(self, model_path: Path, runner_type):
-        self.runner = runner_type(model_path)
+    def __init__(self, model_path: Path, backend_type):
+        self.backend = backend_type(model_path)
         self.resize = MIXVPR_RESIZE
 
     def get_image_descriptor(self, image: np.ndarray) -> np.ndarray:
@@ -20,5 +20,5 @@ class MixVPR(VPRSystem):
             self.resize,
             torchvision.transforms.InterpolationMode.BICUBIC,
         )[None, :]
-        result = self.runner(image)
+        result = self.backend(image)
         return result[0]
