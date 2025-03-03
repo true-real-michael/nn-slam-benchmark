@@ -22,7 +22,7 @@ class VPRSystem(ABC):
         """
         :param gpu_index: The index of the GPU to be used
         """
-        self.device = f"cuda:{gpu_index}" if torch.cuda.is_available() else "cpu"
+        self.device = torch.device(f"cuda:{gpu_index}" if torch.cuda.is_available() else "cpu")
         print('Running inference on device "{}"'.format(self.device))
 
     @abstractmethod

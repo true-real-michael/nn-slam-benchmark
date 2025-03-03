@@ -18,6 +18,7 @@ import torch
 import torchvision
 
 from nnsb.model_conversion.torchscript import TorchScriptExportable
+from nnsb.model_conversion.onnx import OnnxExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.mixvpr.model.mixvpr_model import VPRModel
 from nnsb.vpr_systems.vpr_system import VPRSystem
@@ -25,7 +26,7 @@ from nnsb.vpr_systems.vpr_system import VPRSystem
 MIXVPR_RESIZE = 320
 
 
-class MixVPR(VPRSystem, TorchScriptExportable):
+class MixVPR(VPRSystem, TorchScriptExportable, OnnxExportable):
     """
     Implementation of [MixVPR](https://github.com/amaralibey/MixVPR) global localization method.
     """
@@ -52,7 +53,7 @@ class MixVPR(VPRSystem, TorchScriptExportable):
         )
         self.resize = MIXVPR_RESIZE
 
-        state_dict = torch.load(ckpt_path)
+        state_dict = torch.load(ckpt_path, map_location=self.device)
         self.model.load_state_dict(state_dict)
         self.model.eval().to(self.device)
         print(f"Loaded model from {ckpt_path} successfully!")
@@ -61,7 +62,7 @@ class MixVPR(VPRSystem, TorchScriptExportable):
         # Note that images must be resized to 320x320
         image = transform_image_for_vpr(
             image,
-            (self.resize, self.resize),
+            self.resize,
             torchvision.transforms.InterpolationMode.BICUBIC,
         )[None, :].to(self.device)
         with torch.no_grad():
@@ -74,3 +75,11 @@ class MixVPR(VPRSystem, TorchScriptExportable):
             method="trace", example_inputs=torch.randn(1, 3, self.resize, self.resize)
         )
         trace.save(str(output))
+
+    def export_onnx(self, output: Path):
+        output.parent.mkdir(parents=True, exist_ok=True)
+        torch.onnx.export(
+            self.model,
+            (torch.ones((1, 3, self.resize, self.resize)),),
+            str(output),
+        )

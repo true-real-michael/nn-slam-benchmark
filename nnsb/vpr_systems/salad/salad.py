@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from pathlib import Path
 import numpy as np
 import torch
 
@@ -18,9 +19,10 @@ from torchvision import transforms as tvf
 
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.vpr_system import VPRSystem
+from nnsb.model_conversion.onnx import OnnxExportable
 
 
-class SALAD(VPRSystem):
+class SALAD(VPRSystem, OnnxExportable):
     """
     Wrapper for [SALAD](https://github.com/serizba/salad) VPR method
     """
@@ -36,8 +38,7 @@ class SALAD(VPRSystem):
         """
         super().__init__(gpu_index)
         self.resize = resize
-        self.model = torch.hub.load("serizba/salad", "dinov2_salad")
-        self.model.eval().to(self.device)
+        self.model = torch.hub.load("serizba/salad", "dinov2_salad").eval().to(self.device)
 
     def get_image_descriptor(self, image: np.ndarray):
         image = transform_image_for_vpr(image, self.resize).to(self.device)
@@ -48,3 +49,11 @@ class SALAD(VPRSystem):
             descriptor = self.model(img_cropped)
         descriptor = descriptor.cpu().numpy()[0]
         return descriptor
+
+    def export_onnx(self, output: Path):
+        output.parent.mkdir(parents=True, exist_ok=True)
+        torch.onnx.export(
+            self.model,
+            (torch.ones((1, 3, self.resize // 14 * 14, self.resize // 14 * 14)),),
+            str(output),
+        )

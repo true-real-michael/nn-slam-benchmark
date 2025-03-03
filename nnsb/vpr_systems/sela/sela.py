@@ -13,13 +13,15 @@
 #  limitations under the License.
 import numpy as np
 import torch
+from pathlib import Path
 
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.sela.network import GeoLocalizationNet
 from nnsb.vpr_systems.vpr_system import VPRSystem
+from nnsb.model_conversion.onnx import OnnxExportable
 
 
-class Sela(VPRSystem):
+class Sela(VPRSystem, OnnxExportable):
     """
     Wrapper for [Sela](https://github.com/Lu-Feng/SelaVPR) VPR method
     """
@@ -36,12 +38,12 @@ class Sela(VPRSystem):
         :param gpu_index: The index of the GPU to be used
         """
         super().__init__(gpu_index)
-        self.resize = (224, 224)
+        self.resize = 224
 
         self.model = GeoLocalizationNet(dinov2_path)
         self.model = self.model.eval().to(self.device)
 
-        state_dict = torch.load(path_to_state_dict)["model_state_dict"]
+        state_dict = torch.load(path_to_state_dict, map_location=self.device)["model_state_dict"]
         state_dict = {k[7:]: v for k, v in state_dict.items()}
         self.model.load_state_dict(state_dict)
 
@@ -51,3 +53,21 @@ class Sela(VPRSystem):
             descriptor = self.model.global_feat(image)
         descriptor = descriptor.cpu().numpy()[0]
         return descriptor
+
+    def export_onnx(self, output: Path):
+        output.parent.mkdir(parents=True, exist_ok=True)
+        
+        class Wrapper(torch.nn.Module):
+            def __init__(self, model):
+                super().__init__()
+                self.model = model
+            def forward(self, x):
+                return self.model.global_feat(x)
+
+        wrapper = Wrapper(self.model)
+        torch.onnx.export(
+            wrapper,
+            (torch.ones((1, 3, self.resize // 14 * 14, self.resize // 14 * 14)),),
+            str(output),
+            input_names=["x"],
+        )

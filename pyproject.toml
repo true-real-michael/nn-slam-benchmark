@@ -23,6 +23,8 @@ dependencies = [
     "tqdm==4.66.1",
     "gdown>=5.2.0",
     "euporie>=2.8.4",
+    "onnx>=1.14.1",
+    "onnxruntime>=1.16.0",
 ]
 
 [dependency-groups]
