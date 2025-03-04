@@ -22,7 +22,7 @@ from nnsb.backend.torchscript import TorchscriptBackend
 from nnsb.vpr_systems.cosplace.cosplace import CosPlace
 from nnsb.vpr_systems.eigenplaces.eigenplaces import EigenPlaces
 from nnsb.vpr_systems.netvlad.netvlad import NetVLAD
-from nnsb.vpr_systems.mixvpr.mixvpr_with_backend import MixVPR
+from nnsb.vpr_systems.mixvpr.mixvpr_wrapper import MixVPR
 
 LIMIT = None
 DATASET = "st_lucia"

@@ -70,7 +70,7 @@ class NetVLAD(VPRSystem, TorchScriptExportable):
             desc = vlad_global_pca.detach().cpu().numpy()[0]
         return desc
 
-    def export_torchscript(self, output: Path):
+    def do_export_torchscript(self, output: Path):
         class Unsqueeze(torch.nn.Module):
             def __init__(self):
                 super(Unsqueeze, self).__init__()

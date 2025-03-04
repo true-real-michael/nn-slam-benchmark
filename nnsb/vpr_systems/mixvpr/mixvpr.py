@@ -70,13 +70,13 @@ class MixVPR(VPRSystem, TorchScriptExportable, OnnxExportable):
         descriptor = descriptor.cpu().numpy()[0]
         return descriptor
 
-    def export_torchscript(self, output: Path):
+    def do_export_torchscript(self, output: Path):
         trace = self.model.to_torchscript(
             method="trace", example_inputs=torch.randn(1, 3, self.resize, self.resize)
         )
         trace.save(str(output))
 
-    def export_onnx(self, output: Path):
+    def do_export_onnx(self, output: Path):
         output.parent.mkdir(parents=True, exist_ok=True)
         torch.onnx.export(
             self.model,

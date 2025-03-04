@@ -11,6 +11,7 @@ MIXVPR_RESIZE = 320
 
 class MixVPR(VPRSystem):
     def __init__(self, model_path: Path, backend_type):
+        super().__init__()
         self.backend = backend_type(model_path)
         self.resize = MIXVPR_RESIZE
 

@@ -15,13 +15,14 @@ import numpy as np
 import torch
 from pathlib import Path
 
+from nnsb.model_conversion.torchscript import TorchScriptExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.sela.network import GeoLocalizationNet
 from nnsb.vpr_systems.vpr_system import VPRSystem
 from nnsb.model_conversion.onnx import OnnxExportable
 
 
-class Sela(VPRSystem, OnnxExportable):
+class Sela(VPRSystem, OnnxExportable, TorchScriptExportable):
     """
     Wrapper for [Sela](https://github.com/Lu-Feng/SelaVPR) VPR method
     """
@@ -54,7 +55,7 @@ class Sela(VPRSystem, OnnxExportable):
         descriptor = descriptor.cpu().numpy()[0]
         return descriptor
 
-    def export_onnx(self, output: Path):
+    def do_export_onnx(self, output: Path):
         output.parent.mkdir(parents=True, exist_ok=True)
         
         class Wrapper(torch.nn.Module):
@@ -69,5 +70,18 @@ class Sela(VPRSystem, OnnxExportable):
             wrapper,
             (torch.ones((1, 3, self.resize // 14 * 14, self.resize // 14 * 14)),),
             str(output),
-            input_names=["x"],
         )
+
+    def do_export_torchscript(self, output: Path):
+        class Wrapper(torch.nn.Module):
+            def __init__(self, model):
+                super().__init__()
+                self.model = model
+            def forward(self, x):
+                return self.model.global_feat(x)
+
+        model = Wrapper(self.model)
+        trace = torch.jit.trace(
+            model, torch.Tensor(1, 3, self.resize, self.resize).to(self.device)
+        )
+        trace.save(str(output))

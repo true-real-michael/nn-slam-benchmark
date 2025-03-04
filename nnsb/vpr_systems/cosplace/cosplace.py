@@ -59,7 +59,7 @@ class CosPlace(VPRSystem, TorchScriptExportable):
         descriptor = descriptor.cpu().numpy()[0]
         return descriptor
 
-    def export_torchscript(self, output: Path):
+    def do_export_torchscript(self, output: Path):
         trace = torch.jit.trace(
             self.model, torch.Tensor(1, 3, self.resize, self.resize).to(self.device)
         )

@@ -17,7 +17,7 @@ def export_rknn(
     :param output: The path to save the model
     """
     with NamedTemporaryFile(suffix=".pt") as file:
-        model.export_torchscript(file.name)
+        model.do_export_torchscript(file.name)
 
         input_shape = [1, 3, model.resize, model.resize]
         rknn = RKNN(verbose=True)
