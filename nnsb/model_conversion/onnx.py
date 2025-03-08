@@ -2,19 +2,19 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 
-class TorchScriptExportable(ABC):
+class OnnxExportable(ABC):
     @abstractmethod
-    def do_export_torchscript(self, output: Path):
+    def do_export_onnx(self, output: Path):
         """
-        Export the model to the TorchScript format.
+        Export the model to the ONNX format.
         :param output: The path to save the model
         """
         pass
 
     def export_torchscript(self, output: Path):
         """
-        Export the model to the TorchScript format.
+        Export the model to the ONNX format.
         :param output: The path to save the model
         """
         output.parent.mkdir(exist_ok=True, parents=True)
-        self.do_export_torchscript(output)
+        self.do_export_onnx(output)

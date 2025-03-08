@@ -56,7 +56,7 @@ class SuperPoint(nn.Module, TorchScriptExportable):
 
         return semi, desc
 
-    def export_torchscript(self, output):
+    def do_export_torchscript(self, output):
         trace_model = torch.jit.trace(
             self, torch.Tensor(1, 1, self.resize, self.resize)
         )

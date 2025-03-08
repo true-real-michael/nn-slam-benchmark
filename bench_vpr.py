@@ -18,41 +18,53 @@ from pathlib import Path
 
 from nnsb.benchmarking import benchmark_vpr_system
 from nnsb.dataset import Queries
+from nnsb.backend.torchscript import TorchscriptBackend
 from nnsb.vpr_systems.cosplace.cosplace import CosPlace
 from nnsb.vpr_systems.eigenplaces.eigenplaces import EigenPlaces
 from nnsb.vpr_systems.netvlad.netvlad import NetVLAD
+from nnsb.vpr_systems.mixvpr.mixvpr_wrapper import MixVPR
 
 LIMIT = None
 DATASET = "st_lucia"
-BOARD = "nano1"
+BOARD = "test"
 RESIZE = 800
 
 queries = Queries(Path("datasets"), DATASET, knn=None, limit=LIMIT)
 
 vpr_systems = {}
 
-for resize in [800, 600, 400, 300, 200]:
-    vpr_systems.update(
-        {
-            f"netvlad_{resize}": [
-                NetVLAD,
-                ["weights/mapillary_WPCA4096.pth.tar"],
-                {"resize": resize, "use_faiss": True},
-            ],
-        }
-    )
-for resize in [800, 600, 400, 300, 200]:
-    vpr_systems.update(
-        {
-            f"cosplace_{resize}": [CosPlace, [], {"resize": resize}],
-        }
-    )
-for resize in [800, 600, 400, 300, 200]:
-    vpr_systems.update(
-        {
-            f"eigenplaces_{resize}": [EigenPlaces, [], {"resize": resize}],
-        }
-    )
+# for resize in [800, 600, 400, 300, 200]:
+#     vpr_systems.update(
+#         {
+#             f"netvlad_{resize}": [
+#                 NetVLAD,
+#                 ["weights/mapillary_WPCA4096.pth.tar"],
+#                 {"resize": resize, "use_faiss": True},
+#             ],
+#         }
+#     )
+# for resize in [800, 600, 400, 300, 200]:
+#     vpr_systems.update(
+#         {
+#             f"cosplace_{resize}": [CosPlace, [], {"resize": resize}],
+#         }
+#     )
+# for resize in [800, 600, 400, 300, 200]:
+#     vpr_systems.update(
+#         {
+#             f"eigenplaces_{resize}": [EigenPlaces, [], {"resize": resize}],
+#         }
+#     )
+
+vpr_systems.update(
+    {
+        "mixvpr": [
+            MixVPR,
+            ["weights/torchscript/300/mixvpr.pt", TorchscriptBackend],
+            {},
+        ],
+    }
+)
 
 
 measurements = defaultdict(dict)
