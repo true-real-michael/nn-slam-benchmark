@@ -1,6 +1,8 @@
 from pathlib import Path
-from nnsb.backend.backend import Backend
+
 import torch
+
+from nnsb.backend.backend import Backend
 
 
 class TorchscriptBackend(Backend):
