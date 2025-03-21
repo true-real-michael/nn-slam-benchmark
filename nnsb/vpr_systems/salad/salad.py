@@ -37,6 +37,7 @@ class SALAD(VPRSystem, OnnxExportable, TorchScriptExportable):
         """
         super().__init__(gpu_index)
         self.resize = resize // 14 * 14
+        print(self.device)
         self.model = torch.hub.load("serizba/salad", "dinov2_salad").eval().to(self.device)
 
     def get_image_descriptor(self, image: np.ndarray):
@@ -56,6 +57,6 @@ class SALAD(VPRSystem, OnnxExportable, TorchScriptExportable):
 
     def do_export_torchscript(self, output: Path):
         trace = self.model.to_torchscript(
-            method="trace", example_inputs=torch.randn(1, 3, self.resize, self.resize)
+            method="trace", example_inputs=torch.randn(1, 3, self.resize, self.resize).to(self.device)
         )
         trace.save(str(output))

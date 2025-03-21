@@ -4,10 +4,10 @@ from onnxruntime import InferenceSession
 from nnsb.backend.backend import Backend
 
 
-class OnnxBackend(Backend):
+class TensorRTBackend(Backend):
     def __init__(self, model_path: Path):
         self.session = InferenceSession(
-            model_path, providers=["TensorRTExecutionProvider"]
+            model_path, providers=["TensorrtExecutionProvider"]
         )
 
     def __call__(self, x):

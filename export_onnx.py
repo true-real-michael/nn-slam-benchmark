@@ -9,7 +9,7 @@ from PIL import Image
 
 model = EigenPlaces()
 
-model.export_onnx(Path("weights/tmp/onnx/eigenplaces.onnx"))
+# model.export_onnx(Path("weights/tmp/onnx/eigenplaces.onnx"))
 
 images_path = Path("datasets/st_lucia/images/test/database")
 
@@ -71,9 +71,9 @@ reader = Reader(images_path, model)
 
 
 quantize_static(
-    Path("weights/tmp/onnx/eigenplaces.onnx"),
+    Path("weights/tmp/onnx/eigenplaces-infer.onnx"),
     Path("weights/tmp/onnx/eigenplaces_quant.onnx"),
     reader,
-    weight_type=QuantType.QUInt8,
-    quant_format=QuantFormat.QDQ,
+    weight_type=QuantType.QInt16,
+    # quant_format=QuantFormat.QDQ,
 )
