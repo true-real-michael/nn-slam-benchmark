@@ -17,11 +17,12 @@ import numpy as np
 import torch
 
 from nnsb.model_conversion.torchscript import TorchScriptExportable
+from nnsb.model_conversion.onnx import OnnxExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.vpr_system import VPRSystem
 
 
-class CosPlace(VPRSystem, TorchScriptExportable):
+class CosPlace(VPRSystem, TorchScriptExportable, OnnxExportable):
     """
     Implementation of [CosPlace](https://github.com/gmberton/CosPlace) global localization method.
     """
@@ -64,3 +65,7 @@ class CosPlace(VPRSystem, TorchScriptExportable):
             self.model, torch.Tensor(1, 3, self.resize, self.resize).to(self.device)
         )
         trace.save(str(output))
+
+    def do_export_onnx(self, output: Path):
+        dummy_input = torch.randn(1, 3, self.resize, self.resize).to(self.device)
+        torch.onnx.export(self.model, dummy_input, str(output), verbose=True)

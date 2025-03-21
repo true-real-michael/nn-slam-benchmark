@@ -11,7 +11,7 @@ class OnnxExportable(ABC):
         """
         pass
 
-    def export_torchscript(self, output: Path):
+    def export_onnx(self, output: Path):
         """
         Export the model to the ONNX format.
         :param output: The path to save the model
