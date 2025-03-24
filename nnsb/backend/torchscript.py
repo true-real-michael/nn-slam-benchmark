@@ -6,7 +6,7 @@ from nnsb.backend.backend import Backend
 
 
 class TorchscriptBackend(Backend):
-    def __init__(self, model_path: Path):
+    def __init__(self, model_path: Path, *args, **kwargs):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = torch.jit.load(model_path).to(self.device).eval()
 

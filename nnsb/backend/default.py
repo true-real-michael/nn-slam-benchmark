@@ -3,7 +3,7 @@ from nnsb.backend.backend import Backend
 
 
 class DefaultBackend(Backend):
-    def __init__(self, model):
+    def __init__(self, model, *args, **kwargs):
         self.model = model
 
     def __call__(self, x: np.ndarray):
