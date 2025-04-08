@@ -30,7 +30,7 @@ class EigenPlaces(VPRSystem):
     ):
         super().__init__()
         self.resize = 800
-        self.backend = backend_type(model_path, '1017')
+        self.backend = backend_type(model_path)
 
     def get_image_descriptor(self, image: np.ndarray):
         image = transform_image_for_vpr(image, self.resize)[None, :].to(self.device)
