@@ -12,9 +12,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from pathlib import Path
+from typing import Optional
 import numpy as np
 import torch
 
+from nnsb.backend.backend import Backend
 from nnsb.model_conversion.torchscript import TorchScriptExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.vpr_system import VPRSystem
@@ -29,23 +31,25 @@ class SALAD(VPRSystem, OnnxExportable, TorchScriptExportable):
     def __init__(
         self,
         resize: int = 800,
-        gpu_index: int = 0,
+        backend: Optional[Backend] = None,
     ):
         """
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
         :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(gpu_index)
         self.resize = resize // 14 * 14
+        super().__init__(resize)
         print(self.device)
-        self.model = torch.hub.load("serizba/salad", "dinov2_salad").eval().to(self.device)
+        if backend is None:
+            self.model = torch.hub.load("serizba/salad", "dinov2_salad").eval().to(self.device)
+        else:
+            self.model = backend
 
-    def get_image_descriptor(self, image: np.ndarray):
-        image = transform_image_for_vpr(image, self.resize).to(self.device)[None, :]
+    def get_image_descriptor(self, x: np.ndarray):
+        x = self.preprocess(x)
         with torch.no_grad():
-            descriptor = self.model(image)
-        descriptor = descriptor.cpu().numpy()[0]
-        return descriptor
+            x = self.model(x)
+        # return self.postprocess(x)
 
     def do_export_onnx(self, output: Path):
         output.parent.mkdir(parents=True, exist_ok=True)

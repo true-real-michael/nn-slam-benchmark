@@ -12,10 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import torch
 
+from nnsb.backend.backend import Backend
 from nnsb.model_conversion.torchscript import TorchScriptExportable
 from nnsb.model_conversion.onnx import OnnxExportable
 from nnsb.utils import transform_image_for_vpr
@@ -32,7 +34,7 @@ class EigenPlaces(VPRSystem, TorchScriptExportable, OnnxExportable):
         backbone: str = "ResNet101",
         fc_output_dim: int = 2048,
         resize: int = 800,
-        gpu_index: int = 0,
+        backend: Optional[Backend] = None,
     ):
         """
         :param backbone: Type of backbone
@@ -40,25 +42,25 @@ class EigenPlaces(VPRSystem, TorchScriptExportable, OnnxExportable):
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
         :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(gpu_index)
-        self.resize = resize
-        self.backbone = backbone
-        self.fc_output_dim = fc_output_dim
+        super().__init__(resize)
+        if backend is None:
+            self.backbone = backbone
+            self.fc_output_dim = fc_output_dim
 
-        self.model = torch.hub.load(
-            "gmberton/eigenplaces",
-            "get_trained_model",
-            backbone=backbone,
-            fc_output_dim=fc_output_dim,
-        )
-        self.model.eval().to(self.device)
+            self.model = torch.hub.load(
+                "gmberton/eigenplaces",
+                "get_trained_model",
+                backbone=backbone,
+                fc_output_dim=fc_output_dim,
+            ).eval().to(self.device)
+        else:
+            self.model = backend
 
     def get_image_descriptor(self, image: np.ndarray):
-        image = transform_image_for_vpr(image, self.resize)[None, :].to(self.device)
+        x = self.preprocess(image)
         with torch.no_grad():
-            descriptor = self.model(image)
-        descriptor = descriptor.cpu().numpy()[0]
-        return descriptor
+            x = self.model(x)
+        # return self.postprocess(x)
 
     def do_export_torchscript(self, output: Path):
         trace = torch.jit.trace(

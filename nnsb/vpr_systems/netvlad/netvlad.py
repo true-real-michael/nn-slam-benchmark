@@ -12,10 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import torch
 
+from nnsb.backend.backend import Backend
 from nnsb.model_conversion.torchscript import TorchScriptExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.netvlad.model.models_generic import (
@@ -26,49 +28,85 @@ from nnsb.vpr_systems.netvlad.model.models_generic import (
 from nnsb.vpr_systems.vpr_system import VPRSystem
 
 
+def get_torch_module(model, device):
+        class Unsqueeze(torch.nn.Module):
+            def __init__(self):
+                super(Unsqueeze, self).__init__()
+
+            def forward(self, x):
+                return x.unsqueeze(-1).unsqueeze(-1)
+            
+        unified = torch.nn.Sequential(
+            model.encoder,
+            model.pool,
+            Unsqueeze().eval().to(device),
+            model.WPCA,
+        )
+        return unified
+
+
 class NetVLAD(VPRSystem, TorchScriptExportable):
     """
     Implementation of [NetVLAD](https://github.com/QVPR/Patch-NetVLAD) global localization method.
     """
 
     def __init__(
-        self, path_to_weights: str, resize: int = 800, use_faiss: bool = False
+        self, backend: Optional[Backend] = None, weights: Optional[str] = None, resize: int = 800, use_faiss: bool = True
     ):
         """
         :param path_to_weights: Path to the weights
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
         :param gpu_index: The index of the GPU to be used
         """
-        super().__init__()
+        super().__init__(resize)
         self.resize = resize
-        encoder_dim, encoder = get_backend()
 
-        checkpoint = torch.load(
-            path_to_weights, map_location=lambda storage, loc: storage
-        )
-        num_clusters = checkpoint["state_dict"]["pool.centroids"].shape[0]
-        num_pcs = checkpoint["state_dict"]["WPCA.0.bias"].shape[0]
-        self.model = get_model(
-            encoder,
-            encoder_dim,
-            num_clusters,
-            append_pca_layer=True,
-            num_pcs=num_pcs,
-            use_faiss=use_faiss,
-        )
-        self.model.load_state_dict(checkpoint["state_dict"])
-        self.model = self.model.to(self.device)
-        self.model.eval()
+        if backend is None:
+            encoder_dim, encoder = get_backend()
 
-    def get_image_descriptor(self, image: np.ndarray):
-        image = transform_image_for_vpr(image, self.resize)[None, :].to(self.device)
+            checkpoint = torch.load(
+                weights, map_location=lambda storage, loc: storage
+            )
+            num_clusters = checkpoint["state_dict"]["pool.centroids"].shape[0]
+            num_pcs = checkpoint["state_dict"]["WPCA.0.bias"].shape[0]
+            model = get_model(
+                encoder,
+                encoder_dim,
+                num_clusters,
+                append_pca_layer=True,
+                num_pcs=num_pcs,
+                use_faiss=use_faiss,
+            )
+            model.load_state_dict(checkpoint["state_dict"])
+            model = model.to(self.device).eval()
+            self.model = get_torch_module(model, self.device)
+        else:
+            self.model = backend
 
+    def postprocess(self, x):
+        return x.detach().cpu().numpy()[0]
+
+    def get_image_descriptor(self, x: np.ndarray):
+        x = self.preprocess(x)
         with torch.no_grad():
-            image_encoding = self.model.encoder(image)
-            vlad_global = self.model.pool(image_encoding)
-            vlad_global_pca = get_pca_encoding(self.model, vlad_global)
-            desc = vlad_global_pca.detach().cpu().numpy()[0]
-        return desc
+            x = self.model(x)
+        # return self.postprocess(x)
+
+    def get_torch_module(self):
+        class Unsqueeze(torch.nn.Module):
+            def __init__(self):
+                super(Unsqueeze, self).__init__()
+
+            def forward(self, x):
+                return x.unsqueeze(-1).unsqueeze(-1)
+            
+        unified = torch.nn.Sequential(
+            self.model.encoder,
+            self.model.pool,
+            Unsqueeze().eval().to(self.device),
+            self.model.WPCA,
+        )
+        return unified
 
     def do_export_torchscript(self, output: Path):
         class Unsqueeze(torch.nn.Module):
@@ -80,16 +118,7 @@ class NetVLAD(VPRSystem, TorchScriptExportable):
 
         cpu = torch.device("cpu")
 
-        unified = (
-            torch.nn.Sequential(
-                self.model.encoder,
-                self.model.pool,
-                Unsqueeze().eval().to(self.device),
-                self.model.WPCA,
-            )
-            .eval()
-            .to(cpu)
-        )
+        unified = self.get_torch_module().eval().to(cpu)
         trace = torch.jit.trace(unified, torch.Tensor(1, 3, self.resize, self.resize))
 
         trace.save(str(output))

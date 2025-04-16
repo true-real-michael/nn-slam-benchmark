@@ -43,4 +43,4 @@ def transform_image_for_vpr(
 def transform_image_for_sp(image: np.ndarray, resize: int):
     grayim = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     grayim = cv2.resize(grayim, (resize, resize), interpolation=cv2.INTER_AREA)
-    return torch.from_numpy(grayim / 255.0).float()[None, None]
+    return torch.from_numpy(grayim)[None]

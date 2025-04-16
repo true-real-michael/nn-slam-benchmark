@@ -16,10 +16,21 @@ import torch
 from pathlib import Path
 
 from nnsb.model_conversion.torchscript import TorchScriptExportable
-from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.sela.network import GeoLocalizationNet
 from nnsb.vpr_systems.vpr_system import VPRSystem
 from nnsb.model_conversion.onnx import OnnxExportable
+
+
+def get_torch_module(model):
+    class Wrapper(torch.nn.Module):
+        def __init__(self, model):
+            super().__init__()
+            model = model
+        def forward(self, x):
+            return model.global_feat(x)
+        
+    return Wrapper(model)
+
 
 
 class Sela(VPRSystem, OnnxExportable, TorchScriptExportable):
@@ -29,31 +40,34 @@ class Sela(VPRSystem, OnnxExportable, TorchScriptExportable):
 
     def __init__(
         self,
-        path_to_state_dict,
-        dinov2_path,
-        gpu_index: int = 0,
+        path_to_state_dict = None,
+        dinov2_path = None,
+        backend = None
     ):
         """
         :param path_to_state_dict: Path to the SelaVPR weights
         :param dinov2_path: Path to the DINOv2 (ViT-L/14) foundation model
         :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(gpu_index)
-        self.resize = 224
+        super().__init__(224)
 
-        self.model = GeoLocalizationNet(dinov2_path)
-        self.model = self.model.eval().to(self.device)
 
-        state_dict = torch.load(path_to_state_dict, map_location=self.device)["model_state_dict"]
-        state_dict = {k[7:]: v for k, v in state_dict.items()}
-        self.model.load_state_dict(state_dict)
+        if backend is None:
+            model = GeoLocalizationNet(dinov2_path)
+            model = model.eval().to(self.device)
 
-    def get_image_descriptor(self, image: np.ndarray):
-        image = transform_image_for_vpr(image, self.resize)[None, :].to(self.device)
+            state_dict = torch.load(path_to_state_dict, map_location=self.device)["model_state_dict"]
+            state_dict = {k[7:]: v for k, v in state_dict.items()}
+            model.load_state_dict(state_dict)
+            self.model = get_torch_module(model)
+        else:
+            self.model = backend
+
+    def get_image_descriptor(self, x: np.ndarray):
+        x = self.preprocess(x)
         with torch.no_grad():
-            descriptor = self.model.global_feat(image)
-        descriptor = descriptor.cpu().numpy()[0]
-        return descriptor
+            x = self.model(x)
+        # return self.postprocess(x)
 
     def do_export_onnx(self, output: Path):
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -73,14 +87,7 @@ class Sela(VPRSystem, OnnxExportable, TorchScriptExportable):
         )
 
     def do_export_torchscript(self, output: Path):
-        class Wrapper(torch.nn.Module):
-            def __init__(self, model):
-                super().__init__()
-                self.model = model
-            def forward(self, x):
-                return self.model.global_feat(x)
-
-        model = Wrapper(self.model)
+        model = self.get_torch_module()
         trace = torch.jit.trace(
             model, torch.Tensor(1, 3, self.resize, self.resize).to(self.device)
         )

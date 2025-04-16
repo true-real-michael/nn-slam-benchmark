@@ -12,11 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import torch
 import torchvision
 
+from nnsb.backend.backend import Backend
 from nnsb.model_conversion.torchscript import TorchScriptExportable
 from nnsb.model_conversion.onnx import OnnxExportable
 from nnsb.utils import transform_image_for_vpr
@@ -31,44 +33,45 @@ class MixVPR(VPRSystem, TorchScriptExportable, OnnxExportable):
     Implementation of [MixVPR](https://github.com/amaralibey/MixVPR) global localization method.
     """
 
-    def __init__(self, ckpt_path, gpu_index: int = 0):
+    def __init__(self, ckpt_path: Optional[str] = None, backend: Optional[Backend] = None):
         """
         :param ckpt_path: Path to the checkpoint file
         :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(gpu_index)
-        self.model = VPRModel(
-            backbone_arch="resnet50",
-            layers_to_crop=[4],
-            agg_arch="MixVPR",
-            agg_config={
-                "in_channels": 1024,
-                "in_h": 20,
-                "in_w": 20,
-                "out_channels": 1024,
-                "mix_depth": 4,
-                "mlp_ratio": 1,
-                "out_rows": 4,
-            },
-        )
-        self.resize = MIXVPR_RESIZE
+        super().__init__(MIXVPR_RESIZE)
+        if backend is None:
+            self.model = VPRModel(
+                backbone_arch="resnet50",
+                layers_to_crop=[4],
+                agg_arch="MixVPR",
+                agg_config={
+                    "in_channels": 1024,
+                    "in_h": 20,
+                    "in_w": 20,
+                    "out_channels": 1024,
+                    "mix_depth": 4,
+                    "mlp_ratio": 1,
+                    "out_rows": 4,
+                },
+            )
+            state_dict = torch.load(ckpt_path, map_location=self.device)
+            self.model.load_state_dict(state_dict)
+            self.model.eval().to(self.device)
+        else:
+            self.model = backend
 
-        state_dict = torch.load(ckpt_path, map_location=self.device)
-        self.model.load_state_dict(state_dict)
-        self.model.eval().to(self.device)
-        print(f"Loaded model from {ckpt_path} successfully!")
-
-    def get_image_descriptor(self, image: np.ndarray):
-        # Note that images must be resized to 320x320
-        image = transform_image_for_vpr(
-            image,
+    def preprocess(self, x):
+        return transform_image_for_vpr(
+            x,
             self.resize,
             torchvision.transforms.InterpolationMode.BICUBIC,
         )[None, :].to(self.device)
+    
+    def get_image_descriptor(self, x: np.ndarray):
+        x = self.preprocess(x)
         with torch.no_grad():
-            descriptor = self.model(image)
-        descriptor = descriptor.cpu().numpy()[0]
-        return descriptor
+            x = self.model(x)
+        # return self.postprocess(x)
 
     def do_export_torchscript(self, output: Path):
         trace = self.model.to_torchscript(

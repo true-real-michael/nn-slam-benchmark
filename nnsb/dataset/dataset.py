@@ -23,17 +23,20 @@ def path_to_pil_img(path):
     return Image.open(path).convert("RGB")
 
 
-base_transform = transforms.Compose([transforms.ToTensor()])
-
-
-class Data(torch.utils.data.Dataset):
+class  Data(torch.utils.data.Dataset):
     def __init__(
-        self, dataset_dir: Path, dataset_name, resize=[224, 224], limit=None, gt=True
+        self, dataset_dir: Path, dataset_name, resize=224, limit=None, gt=True, superpoint=True
     ):
         super().__init__()
         if not dataset_dir.exists():
             raise FileNotFoundError(f"Dataset folder {dataset_dir} not found.")
+        self.superpoint = superpoint
         self.resize = resize
+        self.transform = transforms.Compose([
+            transforms.Resize(resize),
+            transforms.CenterCrop(resize),
+            transforms.ToTensor(),
+        ])
 
         database_dir = dataset_dir / dataset_name / "images/test" / "database"
         self.database_paths = sorted(database_dir.glob("*.png")) + sorted(
@@ -60,9 +63,10 @@ class Data(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         img = path_to_pil_img(self.database_paths[index])
-        # img = base_transform(img)
-        # img = transforms.functional.resize(img, self.resize).numpy()
-        return np.array(img)
+        img = self.transform(img)
+        latitude = float(self.database_paths[index].stem.split("@")[1])
+        longitude = float(self.database_paths[index].stem.split("@")[2])
+        return img.numpy(), (latitude, longitude)
 
     def __len__(self):
         return len(self.database_paths)
@@ -77,14 +81,18 @@ class Queries(torch.utils.data.Dataset):
         dataset_dir: Path,
         dataset_name,
         knn,
-        resize=[224, 224],
+        resize=224,
         limit=None,
     ):
         super().__init__()
         queries_dir = dataset_dir / dataset_name / "images/test" / "queries"
         if not queries_dir.exists():
             raise FileNotFoundError(f"Queries folder {queries_dir} not found.")
-        self.resize = resize
+        self.transform = transforms.Compose([
+            transforms.Resize(resize),
+            transforms.ToTensor(),
+        ])
+
 
         self.queries_paths = sorted(queries_dir.glob("*.png")) + sorted(
             queries_dir.glob("*.jpg")
@@ -107,10 +115,11 @@ class Queries(torch.utils.data.Dataset):
             )
 
     def __getitem__(self, index):
-        img = path_to_pil_img(self.queries_paths[index])
-        # img = base_transform(img)
-        # img = transforms.functional.resize(img, self.resize).numpy()
-        return np.array(img)
+        img = path_to_pil_img(self.database_paths[index])
+        img = self.transform(img)
+        latitude = float(self.database_paths[index].stem.split("@")[1])
+        longitude = float(self.database_paths[index].stem.split("@")[2])
+        return img.numpy(), (latitude, longitude)
 
     def __len__(self):
         return self.queries_num

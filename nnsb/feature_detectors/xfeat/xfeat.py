@@ -13,6 +13,17 @@ class XFeat:
         )
         self.xfeat = self.xfeat.to(self.device).eval()
 
+    def get_torch_module(self):
+        class Wrapper(torch.nn.Module):
+            def __init__(self, model):
+                super().__init__()
+                self.model = model
+            
+            def forward(self, x):
+                return self.model.detectAndCompute(x, top_k=4096)[0]
+        
+        return Wrapper(self.xfeat)
+
     def __call__(self, image: np.ndarray):
         image = transform_image_for_sp(image, self.resize)
         with torch.no_grad():

@@ -16,14 +16,27 @@ import numpy as np
 
 from abc import ABC, abstractmethod
 
+from nnsb.utils import transform_image_for_vpr
+
 
 class VPRSystem(ABC):
-    def __init__(self, gpu_index: int = 0):
+    def __init__(self, resize: int):
         """
         :param gpu_index: The index of the GPU to be used
         """
-        self.device = torch.device(f"cuda:{gpu_index}" if torch.cuda.is_available() else "cpu")
+        self.resize = resize
+        self.device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
         print('Running inference on device "{}"'.format(self.device))
+
+    # @abstractmethod
+    # def _get_torch_backend(self, args):
+    #     pass
+
+    def preprocess(self, x):
+        return transform_image_for_vpr(x, self.resize).to(self.device)[None, :]
+    
+    def postprocess(self, x):
+        return x.cpu().numpy()[0]
 
     @abstractmethod
     def get_image_descriptor(self, image: np.ndarray):

@@ -36,5 +36,7 @@ class TensorRTBackend(Backend):
         x = x.to(self.device)
         self.input_binding_addrs['images'] = x.data_ptr()
         self.context.execute_v2(list(self.input_binding_addrs.values()))
-        x = [value.data.cpu().numpy()[0] for value in self.output_bindings.values()]
+        x = [value.data for value in self.output_bindings.values()]
+        if len(x) == 1:
+            x = x[0]
         return x

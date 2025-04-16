@@ -24,7 +24,7 @@ def benchmark_vpr_system(
     time_measurements = {}
 
     start = timer()
-    for image in tqdm(queries, desc=" Q descriptors"):
+    for (image, _) in tqdm(queries, desc=" Q descriptors"):
         vpr_system.get_image_descriptor(image)
     time_measurements["global_descs"] = (timer() - start) / len(queries)
 
