@@ -24,6 +24,7 @@ def transform_image_for_vpr(
     resize: int,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
 ):
+    # breakpoint()
     # image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
     transform = torchvision.transforms.Compose(
         [

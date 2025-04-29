@@ -66,7 +66,7 @@ class  Data(torch.utils.data.Dataset):
         img = self.transform(img)
         latitude = float(self.database_paths[index].stem.split("@")[1])
         longitude = float(self.database_paths[index].stem.split("@")[2])
-        # img = img.permute((1, 2, 0))
+        img = img.permute((1, 2, 0))
         return img.numpy(), (latitude, longitude)
 
     def __len__(self):
@@ -121,7 +121,7 @@ class Queries(torch.utils.data.Dataset):
         img = self.transform(img)
         latitude = float(self.queries_paths[index].stem.split("@")[1])
         longitude = float(self.queries_paths[index].stem.split("@")[2])
-        # img = img.permute((1, 2, 0))
+        img = img.permute((1, 2, 0))
         return img.numpy(), (latitude, longitude)
 
     def __len__(self):
