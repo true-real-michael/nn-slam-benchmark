@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import pickle
+import json
 from pathlib import Path
 
 from nnsb.benchmarking import benchmark_feature_detector
@@ -20,12 +21,12 @@ from nnsb.dataset import Data, Queries
 from nnsb.feature_detectors.superpoint.superpoint import SuperPoint
 from nnsb.feature_detectors.xfeat.xfeat import XFeat
 
-LIMIT = 10
+LIMIT = 1000
 DATASET = "st_lucia"
-BOARD = "nano"
+BOARD = "orin25"
 
-data = Data(Path("datasets"), DATASET, limit=LIMIT, gt=False)
-queries = Queries(Path("datasets"), DATASET, knn=None, limit=LIMIT)
+data = Data(Path("datasets"), DATASET, limit=LIMIT, gt=False, resize=800)
+queries = Queries(Path("datasets"), DATASET, knn=None, limit=LIMIT, resize=800)
 
 feature_matchers = {
     f"superpoint_{resize}": [SuperPoint, [resize]]
@@ -55,7 +56,7 @@ for feature_matcher_name, (method, args) in feature_matchers.items():
     del feature_matcher
     del data_features
 
-output_file = Path(f"measurements/{BOARD}/{DATASET}_feature.pkl")
+output_file = Path(f"measurements/{BOARD}/{DATASET}_feature.json")
 output_file.parent.mkdir(parents=True, exist_ok=True)
-with open(output_file, "wb") as f:
-    pickle.dump(feature_matcher_measurements, f)
+with open(output_file, "w") as f:
+    json.dump(feature_matcher_measurements, f)

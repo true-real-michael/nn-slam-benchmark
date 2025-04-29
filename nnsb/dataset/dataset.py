@@ -66,6 +66,7 @@ class  Data(torch.utils.data.Dataset):
         img = self.transform(img)
         latitude = float(self.database_paths[index].stem.split("@")[1])
         longitude = float(self.database_paths[index].stem.split("@")[2])
+        # img = img.permute((1, 2, 0))
         return img.numpy(), (latitude, longitude)
 
     def __len__(self):
@@ -90,6 +91,7 @@ class Queries(torch.utils.data.Dataset):
             raise FileNotFoundError(f"Queries folder {queries_dir} not found.")
         self.transform = transforms.Compose([
             transforms.Resize(resize),
+            transforms.CenterCrop(resize),
             transforms.ToTensor(),
         ])
 
@@ -115,10 +117,11 @@ class Queries(torch.utils.data.Dataset):
             )
 
     def __getitem__(self, index):
-        img = path_to_pil_img(self.database_paths[index])
+        img = path_to_pil_img(self.queries_paths[index])
         img = self.transform(img)
-        latitude = float(self.database_paths[index].stem.split("@")[1])
-        longitude = float(self.database_paths[index].stem.split("@")[2])
+        latitude = float(self.queries_paths[index].stem.split("@")[1])
+        longitude = float(self.queries_paths[index].stem.split("@")[2])
+        # img = img.permute((1, 2, 0))
         return img.numpy(), (latitude, longitude)
 
     def __len__(self):

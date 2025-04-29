@@ -26,7 +26,7 @@ def benchmark_vpr_system(
     start = timer()
     for (image, _) in tqdm(queries, desc=" Q descriptors"):
         vpr_system.get_image_descriptor(image)
-    time_measurements["global_descs"] = (timer() - start) / len(queries)
+    time_measurements["global_descs"] = len(queries) / (timer() - start)
 
     return time_measurements
 
@@ -38,9 +38,9 @@ def benchmark_feature_detector(
     features = []
 
     start = timer()
-    for query in tqdm(queries, desc=" Q features"):
+    for (query, _) in tqdm(queries, desc=" Q features"):
         features.append(feature_detector(query))
-    time_measurements["feature_extraction"] = (timer() - start) / len(queries)
+    time_measurements["feature_extraction"] = len(queries) / (timer() - start)
 
     return time_measurements, features
 
@@ -68,6 +68,6 @@ def benchmark_feature_matcher(
     for query_features in tqdm(query_local_features, desc="Matching"):
         for db_features in data_local_features:
             feature_matcher.match_feature(query_features, [db_features], k_closest)
-    time_measurements["feature_matching"] = (timer() - start) / len(query_local_features)
+    time_measurements["feature_matching"] = len(query_local_features) / (timer() - start)
 
     return time_measurements

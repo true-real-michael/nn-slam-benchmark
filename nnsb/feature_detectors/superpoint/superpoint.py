@@ -12,7 +12,7 @@ class SuperPoint:
         self.model = Model().to(self.device).eval()
 
     def __call__(self, image):
-        image = image.cpu().numpy()
+        # image = image.cpu().numpy()
         image = np.transpose(image, [1, 2, 0])
         image = transform_image_for_sp(image, self.resize).to(self.device)
         image = image[None]

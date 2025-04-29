@@ -24,13 +24,13 @@ def transform_image_for_vpr(
     resize: int,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
 ):
-    image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    # image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
     transform = torchvision.transforms.Compose(
         [
+            torchvision.transforms.ToTensor(),
             torchvision.transforms.Resize(
                 (resize, resize), interpolation=interpolation
             ),
-            torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize(
                 mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
             ),

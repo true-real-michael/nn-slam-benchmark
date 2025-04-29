@@ -25,7 +25,9 @@ class XFeat:
         return Wrapper(self.xfeat)
 
     def __call__(self, image: np.ndarray):
+        image = image.transpose(1, 2, 0)
         image = transform_image_for_sp(image, self.resize)
+        image = image.unsqueeze(0)
         with torch.no_grad():
             result = self.xfeat.detectAndCompute(image.to(self.device), top_k=4096)[0]
         result["image_size"] = (
