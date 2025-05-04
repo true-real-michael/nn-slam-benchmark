@@ -23,20 +23,27 @@ def path_to_pil_img(path):
     return Image.open(path).convert("RGB")
 
 
-class  Data(torch.utils.data.Dataset):
+class Data(torch.utils.data.Dataset):
     def __init__(
-        self, dataset_dir: Path, dataset_name, resize=224, limit=None, gt=True, superpoint=True
+        self,
+        dataset_dir: Path,
+        dataset_name,
+        resize=224,
+        limit=None,
+        superpoint=True,
     ):
         super().__init__()
         if not dataset_dir.exists():
             raise FileNotFoundError(f"Dataset folder {dataset_dir} not found.")
         self.superpoint = superpoint
         self.resize = resize
-        self.transform = transforms.Compose([
-            transforms.Resize(resize),
-            transforms.CenterCrop(resize),
-            transforms.ToTensor(),
-        ])
+        self.transform = transforms.Compose(
+            [
+                transforms.Resize(resize),
+                transforms.CenterCrop(resize),
+                transforms.ToTensor(),
+            ]
+        )
 
         database_dir = dataset_dir / dataset_name / "images/test" / "database"
         self.database_paths = sorted(database_dir.glob("*.png")) + sorted(
@@ -45,21 +52,18 @@ class  Data(torch.utils.data.Dataset):
         if limit is not None:
             self.database_paths = self.database_paths[:limit]
 
-        if gt:
-            # Import is here because this import crashes on Jetson Nano with default Python 3.8
-            from sklearn.neighbors import NearestNeighbors
+    def get_knn(self, k_neighbors=5):
+        from sklearn.neighbors import NearestNeighbors
 
-            self.database_utms = np.array(
-                [
-                    (path.stem.split("@")[1], path.stem.split("@")[2])
-                    for path in self.database_paths
-                ]
-            ).astype(np.float64)
-
-            self.knn = NearestNeighbors(n_jobs=-1)
-            self.knn.fit(self.database_utms)
-
-        self.database_num = len(self.database_paths)
+        database_utms = np.array(
+            [
+                (path.stem.split("@")[1], path.stem.split("@")[2])
+                for path in self.database_paths
+            ]
+        ).astype(np.float64)
+        knn = NearestNeighbors(n_neighbors=k_neighbors, n_jobs=-1)
+        knn.fit(database_utms)
+        return knn
 
     def __getitem__(self, index):
         img = path_to_pil_img(self.database_paths[index])
