@@ -1,15 +1,17 @@
-from abc import ABC, abstractmethod
 from pathlib import Path
 
+import torch
 
-class OnnxExportable(ABC):
-    @abstractmethod
+from nnsb.method import Method
+
+
+class OnnxExportable(Method):
     def do_export_onnx(self, output: Path):
-        """
-        Export the model to the ONNX format.
-        :param output: The path to save the model
-        """
-        pass
+        torch.onnx.export(
+            self.backend.model.cpu(),
+            (self.get_sample_input(),),
+            str(output),
+        )
 
     def export_onnx(self, output: Path):
         """

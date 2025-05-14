@@ -17,10 +17,18 @@ import numpy as np
 import torch
 
 from nnsb.backend.backend import Backend
+from nnsb.backend.torch import TorchBackend
 from nnsb.model_conversion.torchscript import TorchScriptExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.vpr_system import VPRSystem
 from nnsb.model_conversion.onnx import OnnxExportable
+
+
+class SaladTorchBackend(TorchBackend):
+    def __init__(self):
+        super().__init__()
+        self.model = torch.hub.load("serizba/salad", "dinov2_salad").eval().to(self.device)
+        self.model.eval().to(self.device)
 
 
 class SALAD(VPRSystem, OnnxExportable, TorchScriptExportable):
@@ -37,30 +45,5 @@ class SALAD(VPRSystem, OnnxExportable, TorchScriptExportable):
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
         :param gpu_index: The index of the GPU to be used
         """
-        self.resize = resize // 14 * 14
-        super().__init__(resize)
-        print(self.device)
-        if backend is None:
-            self.model = torch.hub.load("serizba/salad", "dinov2_salad").eval().to(self.device)
-        else:
-            self.model = backend
-
-    def get_image_descriptor(self, x: np.ndarray):
-        x = self.preprocess(x)
-        with torch.no_grad():
-            x = self.model(x)
-        # return self.postprocess(x)
-
-    def do_export_onnx(self, output: Path):
-        output.parent.mkdir(parents=True, exist_ok=True)
-        torch.onnx.export(
-            self.model,
-            (torch.ones((1, 3, self.resize // 14 * 14, self.resize // 14 * 14)),),
-            str(output),
-        )
-
-    def do_export_torchscript(self, output: Path):
-        trace = self.model.to_torchscript(
-            method="trace", example_inputs=torch.randn(1, 3, self.resize, self.resize).to(self.device)
-        )
-        trace.save(str(output))
+        super().__init__(resize // 14 * 14)
+        self.backend = backend or SaladTorchBackend()

@@ -18,13 +18,40 @@ import numpy as np
 import torch
 
 from nnsb.backend.backend import Backend
+from nnsb.backend.torch import TorchBackend
+from nnsb.model_conversion.rknn import RknnExportable
 from nnsb.model_conversion.torchscript import TorchScriptExportable
 from nnsb.model_conversion.onnx import OnnxExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.vpr_system import VPRSystem
 
 
-class EigenPlaces(VPRSystem, TorchScriptExportable, OnnxExportable):
+class EigenPlacesTorchBackend(TorchBackend):
+    def __init__(self, backbone, fc_output_dim):
+        super().__init__()
+        self.backbone = backbone
+        self.fc_output_dim = fc_output_dim
+        self.model = torch.hub.load(
+            "gmberton/eigenplaces",
+            "get_trained_model",
+            backbone=backbone,
+            fc_output_dim=fc_output_dim,
+        ).eval().to(self.device)
+
+    def __call__(self, x):
+        with torch.no_grad():
+            x = self.model(x)
+        return x.cpu()
+    
+    def get_torch_module(self) -> torch.nn.Module:
+        """
+        Returns the torch module of the backend.
+        This method should be implemented by subclasses.
+        """
+        return self.model
+
+
+class EigenPlaces(VPRSystem, RknnExportable):
     """
     Implementation of [EigenPlaces](https://github.com/gmberton/EigenPlaces) global localization method.
     """
@@ -43,31 +70,4 @@ class EigenPlaces(VPRSystem, TorchScriptExportable, OnnxExportable):
         :param gpu_index: The index of the GPU to be used
         """
         super().__init__(resize)
-        if backend is None:
-            self.backbone = backbone
-            self.fc_output_dim = fc_output_dim
-
-            self.model = torch.hub.load(
-                "gmberton/eigenplaces",
-                "get_trained_model",
-                backbone=backbone,
-                fc_output_dim=fc_output_dim,
-            ).eval().to(self.device)
-        else:
-            self.model = backend
-
-    def get_image_descriptor(self, image: np.ndarray):
-        x = self.preprocess(image)
-        with torch.no_grad():
-            x = self.model(x)
-        # return self.postprocess(x)
-
-    def do_export_torchscript(self, output: Path):
-        trace = torch.jit.trace(
-            self.model, torch.Tensor(1, 3, self.resize, self.resize).to(self.device)
-        )
-        trace.save(str(output))
-
-    def do_export_onnx(self, output: Path):
-        dummy_input = torch.randn(1, 3, self.resize, self.resize).to(self.device)
-        torch.onnx.export(self.model, dummy_input, str(output), verbose=True)
+        self.backend = backend or EigenPlacesTorchBackend(backbone, fc_output_dim)
