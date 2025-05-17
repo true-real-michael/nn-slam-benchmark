@@ -3,6 +3,7 @@ from typing import Optional
 
 import torch
 
+from nnsb.backend import Backend
 from nnsb.backend.torch import TorchBackend
 from nnsb.feature_detectors.feature_detector import FeatureDetector
 from nnsb.feature_detectors.superpoint.model_shrunk import SuperPoint as SuperPointModule, SuperPointFrontend
@@ -15,7 +16,7 @@ class SuperPointShrunkTorchBackend(TorchBackend):
         super().__init__(model)
 
 class SuperPointShrunk(FeatureDetector):
-    def __init__(self, resize, backend: Optional[TorchBackend] = None, ckpt: Optional[Path] = None):
+    def __init__(self, resize, backend: Optional[Backend] = None, ckpt: Optional[Path] = None):
         if not backend and not ckpt:
             raise RuntimeError("Please provide backend or ckpt")
         super().__init__(resize)

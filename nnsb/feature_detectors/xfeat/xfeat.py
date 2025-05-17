@@ -2,6 +2,7 @@ from typing import Optional
 
 import torch
 
+from nnsb.backend import Backend
 from nnsb.backend.torch import TorchBackend
 from nnsb.feature_detectors.feature_detector import FeatureDetector
 
@@ -23,7 +24,7 @@ class XFeatTorchBackend(TorchBackend):
 
 
 class XFeat(FeatureDetector):
-    def __init__(self, resize, backend: Optional[TorchBackend] = None):
+    def __init__(self, resize, backend: Optional[Backend] = None):
         super().__init__(resize)
         self.backend = backend or self.get_torch_backend()
 
