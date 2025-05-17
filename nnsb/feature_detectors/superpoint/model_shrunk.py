@@ -2,10 +2,10 @@ import numpy as np
 import torch
 from torch import nn
 
-from nnsb.model_conversion.torchscript import TorchScriptExportable
+from nnsb.model_conversion.rknn import RknnExportable
 
 
-class SuperPoint(nn.Module, TorchScriptExportable):
+class SuperPoint(nn.Module, RknnExportable):
     def __init__(self, resize: int = 800):
         super(SuperPoint, self).__init__()
         self.relu = nn.ReLU(inplace=True)
