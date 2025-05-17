@@ -1,13 +1,69 @@
-from typing import Tuple
-
 import numpy as np
 import torch
-from rknnlite.api import RKNNLite
+from torch import nn
 
-from nnsb.utils import transform_image_for_sp
+from nnsb.model_conversion.torchscript import TorchScriptExportable
 
 
-# https://github.com/pytorch/pytorch/blob/f064c5aa33483061a48994608d890b968ae53fb5/aten/src/THNN/generic/SpatialGridSamplerBilinear.c#L62
+class SuperPoint(nn.Module, TorchScriptExportable):
+    def __init__(self, resize: int = 800):
+        super(SuperPoint, self).__init__()
+        self.relu = nn.ReLU(inplace=True)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        c1, c2, c3, c4, c5, d1 = 64, 64, 128, 128, 256, 256
+        # Shared Encoder.
+        self.conv1a = nn.Conv2d(1, c1, kernel_size=3, stride=1, padding=1)
+        self.conv1b = nn.Conv2d(c1, c1, kernel_size=3, stride=1, padding=1)
+        self.conv2a = nn.Conv2d(c1, c2, kernel_size=3, stride=1, padding=1)
+        self.conv2b = nn.Conv2d(c2, c2, kernel_size=3, stride=1, padding=1)
+        self.conv3a = nn.Conv2d(c2, c3, kernel_size=3, stride=1, padding=1)
+        self.conv3b = nn.Conv2d(c3, c3, kernel_size=3, stride=1, padding=1)
+        self.conv4a = nn.Conv2d(c3, c4, kernel_size=3, stride=1, padding=1)
+        self.conv4b = nn.Conv2d(c4, c4, kernel_size=3, stride=1, padding=1)
+        # Detector Head.
+        self.convPa = nn.Conv2d(c4, c5, kernel_size=3, stride=1, padding=1)
+        self.convPb = nn.Conv2d(c5, 65, kernel_size=1, stride=1, padding=0)
+        # Descriptor Head.
+        self.convDa = nn.Conv2d(c4, c5, kernel_size=3, stride=1, padding=1)
+        self.convDb = nn.Conv2d(c5, d1, kernel_size=1, stride=1, padding=0)
+        self.resize = resize
+
+    def forward(self, x):
+
+        # Shared Encoder.
+        x = self.relu(self.conv1a(x))
+        x = self.relu(self.conv1b(x))
+        x = self.pool(x)
+        x = self.relu(self.conv2a(x))
+        x = self.relu(self.conv2b(x))
+        x = self.pool(x)
+        x = self.relu(self.conv3a(x))
+        x = self.relu(self.conv3b(x))
+        x = self.pool(x)
+        x = self.relu(self.conv4a(x))
+        x = self.relu(self.conv4b(x))
+        # Detector Head.
+        cPa = self.relu(self.convPa(x))
+        semi = self.convPb(cPa)
+        # scores = F.softmax(semi, 1)[:, :-1]
+        # Descriptor Head.
+        cDa = self.relu(self.convDa(x))
+        desc = self.convDb(cDa)
+
+        # Normally, you would divide by l2norm (ReduceL2 in onnx) on device.
+        # However, movidius does not support this layer, so we'll have to calculate it on the host side.
+        # dn = torch.norm(desc, p=2, dim=1) # Compute the norm.
+        # desc = desc.div(torch.unsqueeze(dn, 1)) # Divide by norm to normalize.
+
+        return semi, desc
+
+    def do_export_torchscript(self, output):
+        trace_model = torch.jit.trace(
+            self, torch.Tensor(1, 1, self.resize, self.resize)
+        )
+        trace_model.save(output)
+
+
 def grid_sample(coarse_desc, samp_pts, mode="bilinear"):
     out = np.zeros((coarse_desc.shape[1], samp_pts.shape[2]))
     n, c, h, w = coarse_desc.shape
@@ -60,7 +116,7 @@ def reduce_l2(desc):
 
 
 class SuperPointFrontend(object):
-    def __init__(self, h, w, nms_dist, conf_thresh, nn_thresh):
+    def __init__(self, h, w, nms_dist=4, conf_thresh=0.015, nn_thresh=0.7):
         self.h = h
         self.w = w
 
@@ -168,24 +224,3 @@ class SuperPointFrontend(object):
             desc /= np.linalg.norm(desc, axis=0)[np.newaxis, :]
 
         return pts.transpose(), desc, heatmap
-
-
-class SuperPointRknn:
-    def __init__(self, model_path, resize: int = 800):
-        self.rknn = RKNNLite()
-        self.rknn.load_rknn(model_path)
-        self.rknn.init_runtime(core_mask=RKNNLite.NPU_CORE_0_1_2)
-        self.postprocessor = SuperPointFrontend(resize, resize, 4, 0.015, 0.7)
-        self.resize = resize
-
-    def __del__(self):
-        self.rknn.release()
-
-    def __call__(self, x):
-        x = transform_image_for_sp(x, self.resize).numpy()
-        x = self.rknn.inference([x])
-        pts, desc, heatmap = self.postprocessor.process_pts(x[0], x[1])
-        return {
-            "keypoints": torch.tensor(pts),
-            "descriptors": torch.tensor(desc),
-        }

@@ -27,13 +27,11 @@ class BaseDataset(torch.utils.data.Dataset):
     def __init__(
             self,
             images_dir: Path,
-            dataset_name,
             resize=224,
             limit=None,
             superpoint=False,
     ):
         super().__init__()
-        images_dir = dataset_dir / dataset_name / "images/test" / "queries"
         if not images_dir.exists():
             raise FileNotFoundError(f"Images folder {images_dir} not found.")
 
@@ -95,7 +93,7 @@ class Data(BaseDataset):
         return knn
 
 
-class Queries(torch.utils.data.Dataset):
+class Queries(BaseDataset):
     def __init__(
         self,
         dataset_dir: Path,
@@ -105,7 +103,7 @@ class Queries(torch.utils.data.Dataset):
         limit=None,
         superpoint=False,
     ):
-        super().__init__(dataset_dir / dataset_name / "images/testqueries", resize, limit, superpoint)
+        super().__init__(dataset_dir / dataset_name / "images/test/queries", resize, limit, superpoint)
         if knn is not None:
             self.queries_utms = np.array(
                 [

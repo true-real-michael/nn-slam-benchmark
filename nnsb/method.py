@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 
-from torch import nn
 import torch
 
 from nnsb.backend.torch import TorchBackend
@@ -10,6 +9,9 @@ class Method(ABC):
     """
     Base class for all methods.
     """
+
+    def __init__(self):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     @staticmethod
     @abstractmethod

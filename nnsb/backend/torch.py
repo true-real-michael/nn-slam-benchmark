@@ -12,9 +12,8 @@ class TorchBackend(Backend, ABC):
 
     def __call__(self, x):
         with torch.no_grad():
-            x = self.model(x)
-        return x.cpu()
-    
+            return self.model(x)
+
     def get_torch_module(self) -> torch.nn.Module:
         """
         Returns the torch module of the backend.
