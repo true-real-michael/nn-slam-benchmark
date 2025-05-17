@@ -25,7 +25,7 @@ class SuperPointShrunk(FeatureDetector):
         self.postprocessor = SuperPointFrontend(resize, resize)
 
     def postprocess(self, x):
-        pts, desc, heatmap = self.postprocessor.process_pts(x[0], x[1])
+        pts, desc, heatmap = self.postprocessor.process_pts(x[0].cpu().numpy(), x[1].cpu().numpy())
         return {
             "keypoints": torch.tensor(pts).to(self.device),
             "descriptors": torch.tensor(desc).to(self.device),
