@@ -8,5 +8,5 @@ class Backend(ABC):
         pass
     
     @abstractmethod
-    def __call__(self, x: np.ndarray):
+    def __call__(self, x):
         pass
