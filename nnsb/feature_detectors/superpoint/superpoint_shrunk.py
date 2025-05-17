@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 import torch
@@ -8,20 +9,20 @@ from nnsb.feature_detectors.superpoint.model_shrunk import SuperPoint as SuperPo
 
 
 class SuperPointShrunkTorchBackend(TorchBackend):
-    def __init__(self):
-        super().__init__(SuperPointModule())
-
+    def __init__(self, ckpt: Path):
+        model = SuperPointModule()
+        model.load_state_dict(torch.load(ckpt, map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu")))
+        super().__init__(model)
 
 class SuperPointShrunk(FeatureDetector):
-    def __init__(self, resize, backend: Optional[TorchBackend] = None):
+    def __init__(self, resize, backend: Optional[TorchBackend] = None, ckpt: Optional[Path] = None):
+        if not backend and not ckpt:
+            raise RuntimeError("Please provide backend or ckpt")
         super().__init__(resize)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.resize = resize
-        self.backend = backend or self.get_torch_backend()
+        self.backend = backend or self.get_torch_backend(ckpt)
         self.postprocessor = SuperPointFrontend(resize, resize)
-
-    def preprocess(self, x):
-        return super().preprocess(x)
 
     def postprocess(self, x):
         pts, desc, heatmap = self.postprocessor.process_pts(x[0], x[1])
@@ -32,5 +33,5 @@ class SuperPointShrunk(FeatureDetector):
         }
 
     @staticmethod
-    def get_torch_backend():
-        return SuperPointShrunkTorchBackend()
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+        return SuperPointShrunkTorchBackend(*args, **kwargs)
