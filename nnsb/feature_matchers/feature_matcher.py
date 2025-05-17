@@ -23,7 +23,7 @@ class FeatureMatcher(Method):
         query_feat = self.preprocess(query_feat)
         db_feat = self.preprocess(db_feat)
         matches = self.backend((query_feat, db_feat))
-        return self.postprocess(matches)
+        return self.postprocess(query_feat, db_feat, matches)
 
     @abstractmethod
     def preprocess(self, feat):
