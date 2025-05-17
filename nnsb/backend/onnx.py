@@ -13,6 +13,4 @@ class OnnxBackend(Backend):
     def __call__(self, x):
         x = x.cpu().numpy()
         x = self.session.run(None, {"input.1": x})
-        # x = self.session.run(None, x)
-        x[0]
         return x

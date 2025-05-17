@@ -20,38 +20,21 @@ import torch
 from nnsb.backend.backend import Backend
 from nnsb.backend.torch import TorchBackend
 from nnsb.model_conversion.rknn import RknnExportable
-from nnsb.model_conversion.torchscript import TorchScriptExportable
-from nnsb.model_conversion.onnx import OnnxExportable
-from nnsb.utils import transform_image_for_vpr
+from nnsb.model_conversion.tensorrt import TensorRTExportable
 from nnsb.vpr_systems.vpr_system import VPRSystem
 
 
 class EigenPlacesTorchBackend(TorchBackend):
     def __init__(self, backbone, fc_output_dim):
-        super().__init__()
-        self.backbone = backbone
-        self.fc_output_dim = fc_output_dim
-        self.model = torch.hub.load(
+        super().__init__(torch.hub.load(
             "gmberton/eigenplaces",
             "get_trained_model",
             backbone=backbone,
             fc_output_dim=fc_output_dim,
-        ).eval().to(self.device)
-
-    def __call__(self, x):
-        with torch.no_grad():
-            x = self.model(x)
-        return x.cpu()
-    
-    def get_torch_module(self) -> torch.nn.Module:
-        """
-        Returns the torch module of the backend.
-        This method should be implemented by subclasses.
-        """
-        return self.model
+        ))
 
 
-class EigenPlaces(VPRSystem, RknnExportable):
+class EigenPlaces(VPRSystem, RknnExportable, TensorRTExportable):
     """
     Implementation of [EigenPlaces](https://github.com/gmberton/EigenPlaces) global localization method.
     """
@@ -70,4 +53,8 @@ class EigenPlaces(VPRSystem, RknnExportable):
         :param gpu_index: The index of the GPU to be used
         """
         super().__init__(resize)
-        self.backend = backend or EigenPlacesTorchBackend(backbone, fc_output_dim)
+        self.backend = backend or self.get_torch_backend(backbone, fc_output_dim)
+
+    @staticmethod
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+        return EigenPlacesTorchBackend(*args, **kwargs)

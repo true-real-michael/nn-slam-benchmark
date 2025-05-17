@@ -8,7 +8,7 @@ from nnsb.method import Method
 class OnnxExportable(Method):
     def do_export_onnx(self, output: Path):
         torch.onnx.export(
-            self.backend.model.cpu(),
+            self.get_torch_backend().get_torch_module().cpu(),
             (self.get_sample_input(),),
             str(output),
         )

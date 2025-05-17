@@ -20,6 +20,7 @@ from nnsb.backend.backend import Backend
 from nnsb.backend.torch import TorchBackend
 from nnsb.model_conversion.rknn import RknnExportable
 from nnsb.model_conversion.torchscript import TorchScriptExportable
+from nnsb.model_conversion.tensorrt import TensorRTExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.vpr_system import VPRSystem
 from nnsb.model_conversion.onnx import OnnxExportable
@@ -27,13 +28,12 @@ from nnsb.model_conversion.onnx import OnnxExportable
 
 class SaladShrunkTorchBackend(TorchBackend):
     def __init__(self):
-        super().__init__()
-        model = torch.hub.load("serizba/salad", "dinov2_salad").eval().to(self.device)
-        model.eval().to(self.device)
-        self.model = model.backbone
+        model = torch.hub.load("serizba/salad", "dinov2_salad")
+        super().__init__(model.backbone)
 
 
-class SALADShrunk(VPRSystem, RknnExportable):
+
+class SALADShrunk(VPRSystem, RknnExportable, TensorRTExportable):
     """
     Wrapper for [SALAD](https://github.com/serizba/salad) VPR method
     """
@@ -48,7 +48,7 @@ class SALADShrunk(VPRSystem, RknnExportable):
         :param gpu_index: The index of the GPU to be used
         """
         super().__init__(resize // 14 * 14)
-        self.backend = backend or SaladShrunkTorchBackend()
+        self.backend = backend or self.get_torch_backend()
         model = torch.hub.load("serizba/salad", "dinov2_salad").eval().to(self.device)
         self.aggregator = model.aggregator.eval().to(self.device)
 
@@ -57,10 +57,14 @@ class SALADShrunk(VPRSystem, RknnExportable):
             x = self.aggregator(x)
         return super().postprocess(x)
     
-    def export_rknn(self, output: Path, quantization_dataset: Optional[Path] = None):
+    def export_rknn(self, output: Path, intermediate_format="onnx", quantization_dataset: Optional[Path] = None):
         """
         Export the model to RKNN format.
         :param output: Path to save the exported model.
         :param quantization_dataset: Path to the dataset for quantization.
         """
         super().export_rknn(output, intermediate_format="onnx", quantization_dataset=quantization_dataset)
+
+    @staticmethod
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+        return SaladShrunkTorchBackend()

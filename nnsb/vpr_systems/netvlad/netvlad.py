@@ -22,6 +22,7 @@ from nnsb.backend.torch import TorchBackend
 from nnsb.model_conversion.onnx import OnnxExportable
 from nnsb.model_conversion.rknn import RknnExportable
 from nnsb.model_conversion.torchscript import TorchScriptExportable
+from nnsb.model_conversion.tensorrt import TensorRTExportable
 from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.netvlad.model.models_generic import (
     get_backend,
@@ -40,7 +41,8 @@ class NetVLADTorchBackend(TorchBackend):
             def forward(self, x):
                 return x.unsqueeze(-1).unsqueeze(-1)
 
-        super().__init__()
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        weights = weights
         checkpoint = torch.load(
             weights, map_location=lambda storage, loc: storage
         )
@@ -53,23 +55,24 @@ class NetVLADTorchBackend(TorchBackend):
             num_clusters,
             append_pca_layer=True,
             num_pcs=num_pcs,
-        ).eval().to(self.device)
+        ).eval().to(device)
         
-        self.model = torch.nn.Sequential(
+        super().__init__(torch.nn.Sequential(
             model.encoder,
             model.pool,
-            Unsqueeze().eval().to(self.device),
+            Unsqueeze().eval().to(device),
             model.WPCA,
-        )
+        ))
 
 
-class NetVLAD(VPRSystem, RknnExportable):
+
+class NetVLAD(VPRSystem, RknnExportable, TensorRTExportable):
     """
     Implementation of [NetVLAD](https://github.com/QVPR/Patch-NetVLAD) global localization method.
     """
 
     def __init__(
-        self, backend: Optional[Backend] = None, weights: Optional[str] = None, resize: int = 800, use_faiss: bool = True
+        self, backend: Optional[Backend] = None, weights: Optional[str] = None, resize: int = 800
     ):
         """
         :param path_to_weights: Path to the weights
@@ -78,7 +81,11 @@ class NetVLAD(VPRSystem, RknnExportable):
         """
         super().__init__(resize)
         self.resize = resize
-        self.backend = backend or NetVLADTorchBackend(weights)
+        self.backend = backend or self.get_torch_backend(weights)
 
     def postprocess(self, x):
         return x.detach().cpu().numpy()[0]
+
+    @staticmethod
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+        return NetVLADTorchBackend(*args, **kwargs)

@@ -26,9 +26,7 @@ from nnsb.model_conversion.onnx import OnnxExportable
 
 class SaladTorchBackend(TorchBackend):
     def __init__(self):
-        super().__init__()
-        self.model = torch.hub.load("serizba/salad", "dinov2_salad").eval().to(self.device)
-        self.model.eval().to(self.device)
+        super().__init__(torch.hub.load("serizba/salad", "dinov2_salad"))
 
 
 class SALAD(VPRSystem, OnnxExportable, TorchScriptExportable):
@@ -46,4 +44,8 @@ class SALAD(VPRSystem, OnnxExportable, TorchScriptExportable):
         :param gpu_index: The index of the GPU to be used
         """
         super().__init__(resize // 14 * 14)
-        self.backend = backend or SaladTorchBackend()
+        self.backend = backend or self.get_torch_backend()
+
+    @staticmethod
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+        return SaladTorchBackend()

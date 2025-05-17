@@ -20,26 +20,21 @@ import torch
 from nnsb.backend.backend import Backend
 from nnsb.backend.torch import TorchBackend
 from nnsb.model_conversion.rknn import RknnExportable
-from nnsb.model_conversion.torchscript import TorchScriptExportable
-from nnsb.model_conversion.onnx import OnnxExportable
-from nnsb.utils import transform_image_for_vpr
+from nnsb.model_conversion.tensorrt import TensorRTExportable
 from nnsb.vpr_systems.vpr_system import VPRSystem
 
 
 class CosPlaceTorchBackend(TorchBackend):
     def __init__(self, backbone, fc_output_dim):
-        super().__init__()
-        self.backbone = backbone
-        self.fc_output_dim = fc_output_dim
-        self.model = torch.hub.load(
+        super().__init__(torch.hub.load(
             "gmberton/cosplace",
             "get_trained_model",
             backbone=backbone,
             fc_output_dim=fc_output_dim,
-        ).eval().to(self.device)
+        ))
 
 
-class CosPlace(VPRSystem, RknnExportable):
+class CosPlace(VPRSystem, RknnExportable, TensorRTExportable):
     """
     Implementation of [CosPlace](https://github.com/gmberton/CosPlace) global localization method.
     """
@@ -58,4 +53,9 @@ class CosPlace(VPRSystem, RknnExportable):
         :param gpu_index: The index of the GPU to be used
         """
         super().__init__(resize)
-        self.backend = backend or CosPlaceTorchBackend(backbone, fc_output_dim)
+        self.backend = backend or self.get_torch_backend(backbone, fc_output_dim)
+
+    @staticmethod
+    def get_torch_backend(*args, **kwargs):
+        return CosPlaceTorchBackend(*args, **kwargs)
+

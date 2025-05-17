@@ -19,6 +19,7 @@ from pathlib import Path
 from nnsb.backend.torch import TorchBackend
 from nnsb.model_conversion.rknn import RknnExportable
 from nnsb.model_conversion.torchscript import TorchScriptExportable
+from nnsb.model_conversion.tensorrt import TensorRTExportable
 from nnsb.vpr_systems.sela.network import GeoLocalizationNet
 from nnsb.vpr_systems.vpr_system import VPRSystem
 from nnsb.model_conversion.onnx import OnnxExportable
@@ -26,15 +27,14 @@ from nnsb.model_conversion.onnx import OnnxExportable
 
 class SelaShrunkTorchBackend(TorchBackend):
     def __init__(self, path_to_state_dict, dinov2_path):
-        super().__init__()            
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = GeoLocalizationNet(dinov2_path)
-        state_dict = torch.load(path_to_state_dict, map_location=self.device)["model_state_dict"]
+        state_dict = torch.load(path_to_state_dict, map_location=device)["model_state_dict"]
         state_dict = {k[7:]: v for k, v in state_dict.items()}
         model.load_state_dict(state_dict)
-        self.model = model.backbone.eval().to(self.device)
+        super().__init__(model.backbone)
 
-
-class SelaShrunk(VPRSystem, RknnExportable):
+class SelaShrunk(VPRSystem, RknnExportable, TensorRTExportable):
     """
     Wrapper for [Sela](https://github.com/Lu-Feng/SelaVPR) VPR method
     """
@@ -50,7 +50,7 @@ class SelaShrunk(VPRSystem, RknnExportable):
         :param dinov2_path: Path to the DINOv2 (ViT-L/14) foundation model
         """
         super().__init__(224)
-        self.backend = backend or SelaShrunkTorchBackend(path_to_state_dict, dinov2_path)
+        self.backend = backend or self.get_torch_backend(path_to_state_dict, dinov2_path)
         model = GeoLocalizationNet(dinov2_path)
         state_dict = torch.load(path_to_state_dict, map_location=self.device)["model_state_dict"]
         state_dict = {k[7:]: v for k, v in state_dict.items()}
@@ -69,7 +69,11 @@ class SelaShrunk(VPRSystem, RknnExportable):
         patch_feature = x["x_norm_patchtokens"].view(-1, 16, 16, 1024)
         x1 = patch_feature.permute(0, 3, 1, 2)
         with torch.no_grad():
-            x1 = self.aggregation(x1)
+            x1 = self.aggregator(x1)
         global_feature = torch.nn.functional.normalize(x1, p=2, dim=-1)
         return super().postprocess(global_feature)
+
+    @staticmethod
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+        return SelaShrunkTorchBackend(*args, **kwargs)
     

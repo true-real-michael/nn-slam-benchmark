@@ -27,13 +27,13 @@ class VPRSystem(Method):
         self.device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
         print('Running inference on device "{}"'.format(self.device))
 
-    def get_sample_input(self):
-        return torch.ones((1, 3, self.resize, self.resize)).cpu()
+    def get_sample_input(self) -> torch.Tensor:
+        return torch.randn((1, 3, self.resize, self.resize)).cpu()
 
-    def preprocess(self, x):
-        return transform_image_for_vpr(x, self.resize).to(self.device)[None, :]
-    
-    def postprocess(self, x):
+    def preprocess(self, x) -> torch.Tensor:
+        return x.to(self.device).unsqueeze(0)    
+
+    def postprocess(self, x) -> torch.Tensor:
         return x.cpu().numpy()[0]
 
     def get_image_descriptor(self, x: np.ndarray):
@@ -42,6 +42,7 @@ class VPRSystem(Method):
         :param x: Image in the OpenCV format
         :return: Descriptor of the image
         """
+        breakpoint()
         x = self.preprocess(x)
         x = self.backend(x)
         return self.postprocess(x)

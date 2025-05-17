@@ -6,8 +6,9 @@ from nnsb.backend.backend import Backend
 
 
 class TorchBackend(Backend, ABC):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model: torch.nn.Module):
         self.device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
+        self.model = model.eval().to(self.device)
 
     def __call__(self, x):
         with torch.no_grad():

@@ -7,7 +7,7 @@ from nnsb.method import Method
 
 class TorchScriptExportable(Method):
     def do_export_torchscript(self, output: Path):
-        model = self.backend.get_torch_module().cpu()
+        model = self.get_torch_backend().get_torch_module().cpu()
         trace = torch.jit.trace(
             model, self.get_sample_input()
         )

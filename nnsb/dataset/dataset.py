@@ -30,7 +30,7 @@ class Data(torch.utils.data.Dataset):
         dataset_name,
         resize=224,
         limit=None,
-        superpoint=True,
+        superpoint=False,
     ):
         super().__init__()
         if not dataset_dir.exists():
@@ -70,15 +70,11 @@ class Data(torch.utils.data.Dataset):
         img = self.transform(img)
         latitude = float(self.database_paths[index].stem.split("@")[1])
         longitude = float(self.database_paths[index].stem.split("@")[2])
-        img = img.permute((1, 2, 0))
-        return img.numpy(), (latitude, longitude)
+        # img = img.permute((1, 2, 0))
+        return img, (latitude, longitude)
 
     def __len__(self):
         return len(self.database_paths)
-
-    def __repr__(self):
-        return f"< {self.__class__.__name__}, - #database: {self.database_num};>"
-
 
 class Queries(torch.utils.data.Dataset):
     def __init__(
@@ -88,17 +84,28 @@ class Queries(torch.utils.data.Dataset):
         knn,
         resize=224,
         limit=None,
+        superpoint=False,
     ):
         super().__init__()
         queries_dir = dataset_dir / dataset_name / "images/test" / "queries"
         if not queries_dir.exists():
             raise FileNotFoundError(f"Queries folder {queries_dir} not found.")
-        self.transform = transforms.Compose([
-            transforms.Resize(resize),
-            transforms.CenterCrop(resize),
-            transforms.ToTensor(),
-        ])
 
+        if not superpoint:
+            self.transform = transforms.Compose([
+                transforms.Resize(resize),
+                transforms.CenterCrop(resize),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ])
+        else:
+            self.transform = transforms.Compose([
+                transforms.Resize(resize),
+                transforms.CenterCrop(resize),
+                transforms.ToTensor(),
+            ])
 
         self.queries_paths = sorted(queries_dir.glob("*.png")) + sorted(
             queries_dir.glob("*.jpg")
@@ -125,8 +132,8 @@ class Queries(torch.utils.data.Dataset):
         img = self.transform(img)
         latitude = float(self.queries_paths[index].stem.split("@")[1])
         longitude = float(self.queries_paths[index].stem.split("@")[2])
-        img = img.permute((1, 2, 0))
-        return img.numpy(), (latitude, longitude)
+        # img = img.permute((1, 2, 0))
+        return img, (latitude, longitude)
 
     def __len__(self):
         return self.queries_num

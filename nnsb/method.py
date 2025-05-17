@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from torch import nn
+import torch
 
 from nnsb.backend.torch import TorchBackend
 
@@ -10,24 +11,19 @@ class Method(ABC):
     Base class for all methods.
     """
 
-    def _get_model_for_quantization(self, *args, **kwargs):
+    @staticmethod
+    @abstractmethod
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
         """
-        Return a model ready for quantization.
+        Return the torch backend for the method.
         To be implemented by specific methods.
         """
-        return self.backend.model
+        raise NotImplementedError
 
     @abstractmethod
-    def get_sample_input(self):
+    def get_sample_input(self) -> torch.Tensor:
         """
         Return a sample input for the model.
         To be implemented by specific methods.
         """
         pass
-    
-    def get_quantization_args(self):
-        """
-        Return a dictionary of additional arguments for quantization.
-        Can be overridden by specific methods if needed.
-        """
-        return {}

@@ -24,20 +24,19 @@ from nnsb.model_conversion.onnx import OnnxExportable
 
 class SelaTorchBackend(TorchBackend):
     def __init__(self, path_to_state_dict, dinov2_path):
-        super().__init__()
         class Wrapper(torch.nn.Module):
             def __init__(self, model):
                 super().__init__()
-                model = model
+                self.model = model
 
             def forward(self, x):
                 return self.model.global_feat(x)
             
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = GeoLocalizationNet(dinov2_path)
-        state_dict = torch.load(path_to_state_dict, map_location=self.device)["model_state_dict"]
+        state_dict = torch.load(path_to_state_dict, map_location=device)["model_state_dict"]
         state_dict = {k[7:]: v for k, v in state_dict.items()}
         model.load_state_dict(state_dict)
-        model = model.eval().to(self.device)
         self.model = Wrapper(model).eval().to(self.device)
 
 
@@ -57,6 +56,8 @@ class Sela(VPRSystem, OnnxExportable, TorchScriptExportable):
         :param dinov2_path: Path to the DINOv2 (ViT-L/14) foundation model
         """
         super().__init__(224)
-        self.backend = backend or SelaTorchBackend(path_to_state_dict, dinov2_path)
+        self.backend = backend or self.get_torch_backend(path_to_state_dict, dinov2_path)
 
-    
+    @staticmethod
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+        return SelaTorchBackend(*args, **kwargs)

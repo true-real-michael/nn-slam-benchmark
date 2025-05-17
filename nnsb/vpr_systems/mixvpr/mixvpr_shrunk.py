@@ -21,9 +21,7 @@ import torchvision
 from nnsb.backend.backend import Backend
 from nnsb.backend.torch import TorchBackend
 from nnsb.model_conversion.rknn import RknnExportable
-from nnsb.model_conversion.torchscript import TorchScriptExportable
-from nnsb.model_conversion.onnx import OnnxExportable
-from nnsb.utils import transform_image_for_vpr
+from nnsb.model_conversion.tensorrt import TensorRTExportable
 from nnsb.vpr_systems.mixvpr.model.mixvpr_model import VPRModel
 from nnsb.vpr_systems.vpr_system import VPRSystem
 
@@ -32,8 +30,7 @@ MIXVPR_RESIZE = 320
 
 class MixVprShrunkTorchBackend(TorchBackend):
     def __init__(self, ckpt_path: Optional[str] = None):
-        super().__init__()
-        self.model = VPRModel(
+        model = VPRModel(
             backbone_arch="resnet50",
             layers_to_crop=[4],
             agg_arch="MixVPR",
@@ -47,12 +44,14 @@ class MixVprShrunkTorchBackend(TorchBackend):
                 "out_rows": 4,
             },
         )
-        state_dict = torch.load(ckpt_path, map_location=self.device)
-        self.model.load_state_dict(state_dict)
-        self.model = self.model.eval().to(self.device)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        state_dict = torch.load(ckpt_path, map_location=device)
+        model.load_state_dict(state_dict)
+        super().__init__(model.backbone)
 
 
-class MixVPRShrunk(VPRSystem, RknnExportable):
+
+class MixVPRShrunk(VPRSystem, RknnExportable, TensorRTExportable):
     """
     Implementation of [MixVPR](https://github.com/amaralibey/MixVPR) global localization method.
     """
@@ -63,7 +62,7 @@ class MixVPRShrunk(VPRSystem, RknnExportable):
         :param gpu_index: The index of the GPU to be used
         """
         super().__init__(MIXVPR_RESIZE)
-        self.backend = backend or MixVprShrunkTorchBackend(ckpt_path)
+        self.backend = backend or self.get_torch_backend(ckpt_path)
 
         model = VPRModel(
             backbone_arch="resnet50",
@@ -83,13 +82,11 @@ class MixVPRShrunk(VPRSystem, RknnExportable):
         model.load_state_dict(state_dict)
         self.aggregator = model.eval().to(self.device).aggregator
 
-    def preprocess(self, x):
-        return transform_image_for_vpr(
-            x,
-            self.resize,
-            torchvision.transforms.InterpolationMode.BICUBIC,
-        )[None, :].to(self.device)
-    
+    @staticmethod
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+        return MixVprShrunkTorchBackend(*args, **kwargs)
+
+
     def postprocess(self, x):
         with torch.no_grad():
             x = self.aggregator(x)
