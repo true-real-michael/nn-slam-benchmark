@@ -1,36 +1,36 @@
-import numpy as np
+from typing import Optional
+
 import torch
 
-from nnsb.utils import transform_image_for_sp
+from nnsb.backend.torch import TorchBackend
+from nnsb.feature_detectors.feature_detector import FeatureDetector
 
 
-class XFeat:
-    def __init__(self, resize):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.resize = resize
-        self.xfeat = torch.hub.load(
-            "verlab/accelerated_features", "XFeat", pretrained=True, top_k=4096
-        )
-        self.xfeat = self.xfeat.to(self.device).eval()
-
-    def get_torch_module(self):
+class XFeatTorchBackend(TorchBackend):
+    def __init__(self):
         class Wrapper(torch.nn.Module):
             def __init__(self, model):
                 super().__init__()
                 self.model = model
-            
+
             def forward(self, x):
                 return self.model.detectAndCompute(x, top_k=4096)[0]
-        
-        return Wrapper(self.xfeat)
 
-    def __call__(self, image: np.ndarray):
-        image = image.transpose(1, 2, 0)
-        image = transform_image_for_sp(image, self.resize)
-        image = image.unsqueeze(0)
-        with torch.no_grad():
-            result = self.xfeat.detectAndCompute(image.to(self.device), top_k=4096)[0]
-        result["image_size"] = (
-            torch.tensor((self.resize, self.resize)).to(image).float()
+        xfeat = torch.hub.load(
+            "verlab/accelerated_features", "XFeat", pretrained=True, top_k=4096
         )
-        return {k: v.cpu().numpy() for k, v in result.items()}
+        super().__init__(Wrapper(xfeat))
+
+
+class XFeat(FeatureDetector):
+    def __init__(self, resize, backend: Optional[TorchBackend] = None):
+        super().__init__(resize)
+        self.backend = backend or self.get_torch_backend()
+
+    def postprocess(self, x):
+        x["image_size"] = torch.tensor((self.resize, self.resize)).to(self.device).float()
+        return x
+
+    @staticmethod
+    def get_torch_backend():
+        return XFeatTorchBackend()

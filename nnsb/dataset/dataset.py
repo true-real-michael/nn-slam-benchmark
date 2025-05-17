@@ -66,7 +66,7 @@ class BaseDataset(torch.utils.data.Dataset):
         return img, (latitude, longitude)
 
     def __len__(self):
-        return len(self.database_paths)
+        return len(self.images_paths)
 
 class Data(BaseDataset):
     def __init__(
