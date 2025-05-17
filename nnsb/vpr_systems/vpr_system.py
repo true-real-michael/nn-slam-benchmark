@@ -11,21 +11,21 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from abc import ABC
+
 import torch
 import numpy as np
 
 from nnsb.method import Method
-from nnsb.utils import transform_image_for_vpr
 
 
-class VPRSystem(Method):
+class VPRSystem(Method, ABC):
     def __init__(self, resize: int):
         """
         :param gpu_index: The index of the GPU to be used
         """
+        super().__init__()
         self.resize = resize
-        self.device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
-        print('Running inference on device "{}"'.format(self.device))
 
     def get_sample_input(self) -> torch.Tensor:
         return torch.randn((1, 3, self.resize, self.resize)).cpu()

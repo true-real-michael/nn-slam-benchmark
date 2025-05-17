@@ -23,73 +23,19 @@ def path_to_pil_img(path):
     return Image.open(path).convert("RGB")
 
 
-class Data(torch.utils.data.Dataset):
+class BaseDataset(torch.utils.data.Dataset):
     def __init__(
-        self,
-        dataset_dir: Path,
-        dataset_name,
-        resize=224,
-        limit=None,
-        superpoint=False,
+            self,
+            images_dir: Path,
+            dataset_name,
+            resize=224,
+            limit=None,
+            superpoint=False,
     ):
         super().__init__()
-        if not dataset_dir.exists():
-            raise FileNotFoundError(f"Dataset folder {dataset_dir} not found.")
-        self.superpoint = superpoint
-        self.resize = resize
-        self.transform = transforms.Compose(
-            [
-                transforms.Resize(resize),
-                transforms.CenterCrop(resize),
-                transforms.ToTensor(),
-            ]
-        )
-
-        database_dir = dataset_dir / dataset_name / "images/test" / "database"
-        self.database_paths = sorted(database_dir.glob("*.png")) + sorted(
-            database_dir.glob("*.jpg")
-        )
-        if limit is not None:
-            self.database_paths = self.database_paths[:limit]
-
-    def get_knn(self, k_neighbors=5):
-        from sklearn.neighbors import NearestNeighbors
-
-        database_utms = np.array(
-            [
-                (path.stem.split("@")[1], path.stem.split("@")[2])
-                for path in self.database_paths
-            ]
-        ).astype(np.float64)
-        knn = NearestNeighbors(n_neighbors=k_neighbors, n_jobs=-1)
-        knn.fit(database_utms)
-        return knn
-
-    def __getitem__(self, index):
-        img = path_to_pil_img(self.database_paths[index])
-        img = self.transform(img)
-        latitude = float(self.database_paths[index].stem.split("@")[1])
-        longitude = float(self.database_paths[index].stem.split("@")[2])
-        # img = img.permute((1, 2, 0))
-        return img, (latitude, longitude)
-
-    def __len__(self):
-        return len(self.database_paths)
-
-class Queries(torch.utils.data.Dataset):
-    def __init__(
-        self,
-        dataset_dir: Path,
-        dataset_name,
-        knn,
-        resize=224,
-        limit=None,
-        superpoint=False,
-    ):
-        super().__init__()
-        queries_dir = dataset_dir / dataset_name / "images/test" / "queries"
-        if not queries_dir.exists():
-            raise FileNotFoundError(f"Queries folder {queries_dir} not found.")
+        images_dir = dataset_dir / dataset_name / "images/test" / "queries"
+        if not images_dir.exists():
+            raise FileNotFoundError(f"Images folder {images_dir} not found.")
 
         if not superpoint:
             self.transform = transforms.Compose([
@@ -105,15 +51,61 @@ class Queries(torch.utils.data.Dataset):
                 transforms.Resize(resize),
                 transforms.CenterCrop(resize),
                 transforms.ToTensor(),
+                transforms.Grayscale(),
             ])
 
-        self.queries_paths = sorted(queries_dir.glob("*.png")) + sorted(
-            queries_dir.glob("*.jpg")
+        self.images_paths = sorted(images_dir.glob("*.png")) + sorted(
+            images_dir.glob("*.jpg")
         )
         if limit is not None:
-            self.queries_paths = self.queries_paths[:limit]
-        self.queries_num = len(self.queries_paths)
+            self.images_paths = self.images_paths[:limit]
 
+    def __getitem__(self, index):
+        img = path_to_pil_img(self.images_paths[index])
+        img = self.transform(img)
+        latitude = float(self.images_paths[index].stem.split("@")[1])
+        longitude = float(self.images_paths[index].stem.split("@")[2])
+        return img, (latitude, longitude)
+
+    def __len__(self):
+        return len(self.database_paths)
+
+class Data(BaseDataset):
+    def __init__(
+        self,
+        dataset_dir: Path,
+        dataset_name,
+        resize=224,
+        limit=None,
+        superpoint=False,
+    ):
+        super().__init__(dataset_dir / dataset_name / "images/test/database", resize, limit, superpoint)
+
+    def get_knn(self, k_neighbors=5):
+        from sklearn.neighbors import NearestNeighbors
+
+        database_utms = np.array(
+            [
+                (path.stem.split("@")[1], path.stem.split("@")[2])
+                for path in self.database_paths
+            ]
+        ).astype(np.float64)
+        knn = NearestNeighbors(n_neighbors=k_neighbors, n_jobs=-1)
+        knn.fit(database_utms)
+        return knn
+
+
+class Queries(torch.utils.data.Dataset):
+    def __init__(
+        self,
+        dataset_dir: Path,
+        dataset_name,
+        knn,
+        resize=224,
+        limit=None,
+        superpoint=False,
+    ):
+        super().__init__(dataset_dir / dataset_name / "images/testqueries", resize, limit, superpoint)
         if knn is not None:
             self.queries_utms = np.array(
                 [
@@ -126,20 +118,6 @@ class Queries(torch.utils.data.Dataset):
             self.soft_positives_per_query = knn.radius_neighbors(
                 self.queries_utms, 4, return_distance=False
             )
-
-    def __getitem__(self, index):
-        img = path_to_pil_img(self.queries_paths[index])
-        img = self.transform(img)
-        latitude = float(self.queries_paths[index].stem.split("@")[1])
-        longitude = float(self.queries_paths[index].stem.split("@")[2])
-        # img = img.permute((1, 2, 0))
-        return img, (latitude, longitude)
-
-    def __len__(self):
-        return self.queries_num
-
-    def __repr__(self):
-        return f"< {self.__class__.__name__}, - #queries: {self.queries_num};>"
 
     def get_positives(self):
         return self.soft_positives_per_query

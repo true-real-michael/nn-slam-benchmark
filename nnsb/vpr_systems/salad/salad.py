@@ -13,13 +13,11 @@
 #  limitations under the License.
 from pathlib import Path
 from typing import Optional
-import numpy as np
 import torch
 
 from nnsb.backend.backend import Backend
 from nnsb.backend.torch import TorchBackend
 from nnsb.model_conversion.torchscript import TorchScriptExportable
-from nnsb.utils import transform_image_for_vpr
 from nnsb.vpr_systems.vpr_system import VPRSystem
 from nnsb.model_conversion.onnx import OnnxExportable
 
