@@ -1,0 +1,14 @@
+stages:
+  - lint
+
+black-check:
+  stage: lint
+  image: python:3.10
+  tags:
+    - public
+  script:
+    - pip install black isort flake8
+    - black --check --diff .
+    - flake8 nnsb --count --max-line-length=160 --statistics --ignore=E721,E741
+    - isort nnsb --diff --check-only
+    - black --check --diff nnsb
