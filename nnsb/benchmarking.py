@@ -8,6 +8,12 @@ from nnsb.dataset import Queries
 from nnsb.feature_matchers.feature_matcher import FeatureMatcher
 from nnsb.vpr_systems.vpr_system import VPRSystem
 
+__all__ = [
+    "benchmark_vpr_system",
+    "benchmark_feature_matcher",
+    "benchmark_feature_detector",
+]
+
 
 def benchmark_vpr_system(
     queries: Queries,

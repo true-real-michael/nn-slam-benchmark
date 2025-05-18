@@ -1,4 +1,4 @@
-#  Copyright (c) 2023, Ivan Moskalenko, Anastasiia Kornilova
+#  Copyright (c) 2025, Ivan Moskalenko, Anastasiia Kornilova
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -11,3 +11,9 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from .feature_matcher import FeatureMatcher
+from .lightglue import LightGlue
+from .superglue import SuperGlue
+from .lighterglue import LighterGlue
+
+__all__ = ["FeatureMatcher", "SuperGlue", "LightGlue", "LighterGlue"]
