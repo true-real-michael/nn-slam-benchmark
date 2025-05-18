@@ -11,47 +11,68 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import torch
 
 from nnsb.backend.backend import Backend
-from nnsb.model_conversion.torchscript import TorchScriptExportable
-from nnsb.utils import transform_image_for_vpr
+from nnsb.backend.torch import TorchBackend
+from nnsb.model_conversion.rknn import RknnExportable
+from nnsb.model_conversion.tensorrt import TensorRTExportable
 from nnsb.vpr_systems.netvlad.model.models_generic import (
     get_backend,
     get_model,
-    get_pca_encoding,
 )
 from nnsb.vpr_systems.vpr_system import VPRSystem
 
 
-def get_torch_module(model, device):
+class NetVLADTorchBackend(TorchBackend):
+    def __init__(self, weights: Optional[str] = None):
         class Unsqueeze(torch.nn.Module):
             def __init__(self):
                 super(Unsqueeze, self).__init__()
 
             def forward(self, x):
                 return x.unsqueeze(-1).unsqueeze(-1)
-            
-        unified = torch.nn.Sequential(
-            model.encoder,
-            model.pool,
-            Unsqueeze().eval().to(device),
-            model.WPCA,
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        weights = weights
+        checkpoint = torch.load(weights, map_location=lambda storage, loc: storage)
+        encoder_dim, encoder = get_backend()
+        num_clusters = checkpoint["state_dict"]["pool.centroids"].shape[0]
+        num_pcs = checkpoint["state_dict"]["WPCA.0.bias"].shape[0]
+        model = (
+            get_model(
+                encoder,
+                encoder_dim,
+                num_clusters,
+                append_pca_layer=True,
+                num_pcs=num_pcs,
+            )
+            .eval()
+            .to(device)
         )
-        return unified
+
+        super().__init__(
+            torch.nn.Sequential(
+                model.encoder,
+                model.pool,
+                Unsqueeze().eval().to(device),
+                model.WPCA,
+            )
+        )
 
 
-class NetVLAD(VPRSystem, TorchScriptExportable):
+class NetVLAD(VPRSystem, RknnExportable, TensorRTExportable):
     """
     Implementation of [NetVLAD](https://github.com/QVPR/Patch-NetVLAD) global localization method.
     """
 
     def __init__(
-        self, backend: Optional[Backend] = None, weights: Optional[str] = None, resize: int = 800, use_faiss: bool = True
+        self,
+        backend: Optional[Backend] = None,
+        weights: Optional[str] = None,
+        resize: int = 800,
     ):
         """
         :param path_to_weights: Path to the weights
@@ -60,65 +81,11 @@ class NetVLAD(VPRSystem, TorchScriptExportable):
         """
         super().__init__(resize)
         self.resize = resize
-
-        if backend is None:
-            encoder_dim, encoder = get_backend()
-
-            checkpoint = torch.load(
-                weights, map_location=lambda storage, loc: storage
-            )
-            num_clusters = checkpoint["state_dict"]["pool.centroids"].shape[0]
-            num_pcs = checkpoint["state_dict"]["WPCA.0.bias"].shape[0]
-            model = get_model(
-                encoder,
-                encoder_dim,
-                num_clusters,
-                append_pca_layer=True,
-                num_pcs=num_pcs,
-                use_faiss=use_faiss,
-            )
-            model.load_state_dict(checkpoint["state_dict"])
-            model = model.to(self.device).eval()
-            self.model = get_torch_module(model, self.device)
-        else:
-            self.model = backend
+        self.backend = backend or self.get_torch_backend(weights)
 
     def postprocess(self, x):
         return x.detach().cpu().numpy()[0]
 
-    def get_image_descriptor(self, x: np.ndarray):
-        x = self.preprocess(x)
-        with torch.no_grad():
-            x = self.model(x)
-        # return self.postprocess(x)
-
-    def get_torch_module(self):
-        class Unsqueeze(torch.nn.Module):
-            def __init__(self):
-                super(Unsqueeze, self).__init__()
-
-            def forward(self, x):
-                return x.unsqueeze(-1).unsqueeze(-1)
-            
-        unified = torch.nn.Sequential(
-            self.model.encoder,
-            self.model.pool,
-            Unsqueeze().eval().to(self.device),
-            self.model.WPCA,
-        )
-        return unified
-
-    def do_export_torchscript(self, output: Path):
-        class Unsqueeze(torch.nn.Module):
-            def __init__(self):
-                super(Unsqueeze, self).__init__()
-
-            def forward(self, x):
-                return x.unsqueeze(-1).unsqueeze(-1)
-
-        cpu = torch.device("cpu")
-
-        unified = self.get_torch_module().eval().to(cpu)
-        trace = torch.jit.trace(unified, torch.Tensor(1, 3, self.resize, self.resize))
-
-        trace.save(str(output))
+    @staticmethod
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+        return NetVLADTorchBackend(*args, **kwargs)

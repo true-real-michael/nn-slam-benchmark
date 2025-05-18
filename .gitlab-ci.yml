@@ -9,6 +9,6 @@ linters:
   script:
     - pip install black flake8
     - black nnsb --check --diff --exclude='model|backbone'
-    - flake8 nnsb --count --max-line-length=160 --statistics --ignore=E721,E741
+    - flake8 nnsb --count --max-line-length=160 --statistics --ignore=E721,E741 --exclude='**/dinov2/*,**/model/*,**/network.py,**/backbone/*'
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'

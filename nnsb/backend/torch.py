@@ -1,12 +1,21 @@
-import numpy as np
-from abc import ABC, abstractmethod
+from abc import ABC
+
+import torch
 from nnsb.backend.backend import Backend
 
 
 class TorchBackend(Backend, ABC):
-    @abstractmethod
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, model: torch.nn.Module):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = model.eval().to(self.device)
 
-    def __call__(self, x: np.ndarray):
-        return self.model(x)
+    def __call__(self, x):
+        with torch.no_grad():
+            return self.model(x)
+
+    def get_torch_module(self) -> torch.nn.Module:
+        """
+        Returns the torch module of the backend.
+        This method should be implemented by subclasses.
+        """
+        return self.model

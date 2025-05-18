@@ -11,25 +11,19 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from typing import Optional
 import torch
+from pathlib import Path
 
 from nnsb.backend.torch import TorchBackend
-from nnsb.model_conversion.torchscript import TorchScriptExportable
+from nnsb.model_conversion.rknn import RknnExportable
+from nnsb.model_conversion.tensorrt import TensorRTExportable
 from nnsb.vpr_systems.sela.network import GeoLocalizationNet
 from nnsb.vpr_systems.vpr_system import VPRSystem
-from nnsb.model_conversion.onnx import OnnxExportable
 
 
-class SelaTorchBackend(TorchBackend):
+class SelaShrunkTorchBackend(TorchBackend):
     def __init__(self, path_to_state_dict, dinov2_path):
-        class Wrapper(torch.nn.Module):
-            def __init__(self, model):
-                super().__init__()
-                self.model = model
-
-            def forward(self, x):
-                return self.model.global_feat(x)
-
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = GeoLocalizationNet(dinov2_path)
         state_dict = torch.load(path_to_state_dict, map_location=device)[
@@ -37,10 +31,10 @@ class SelaTorchBackend(TorchBackend):
         ]
         state_dict = {k[7:]: v for k, v in state_dict.items()}
         model.load_state_dict(state_dict)
-        self.model = Wrapper(model).eval().to(self.device)
+        super().__init__(model.backbone)
 
 
-class Sela(VPRSystem, OnnxExportable, TorchScriptExportable):
+class SelaShrunk(VPRSystem, RknnExportable, TensorRTExportable):
     """
     Wrapper for [Sela](https://github.com/Lu-Feng/SelaVPR) VPR method
     """
@@ -54,7 +48,39 @@ class Sela(VPRSystem, OnnxExportable, TorchScriptExportable):
         self.backend = backend or self.get_torch_backend(
             path_to_state_dict, dinov2_path
         )
+        model = GeoLocalizationNet(dinov2_path)
+        state_dict = torch.load(path_to_state_dict, map_location=self.device)[
+            "model_state_dict"
+        ]
+        state_dict = {k[7:]: v for k, v in state_dict.items()}
+        model.load_state_dict(state_dict)
+        self.aggregator = model.aggregation.eval().to(self.device)
+
+    def export_rknn(
+        self,
+        output: Path,
+        intermediate_format="onnx",
+        quantization_dataset: Optional[Path] = None,
+    ):
+        """
+        Export the model to RKNN format.
+        :param output: Path to save the exported model.
+        :param quantization_dataset: Path to the dataset for quantization.
+        """
+        super().export_rknn(
+            output,
+            intermediate_format="onnx",
+            quantization_dataset=quantization_dataset,
+        )
+
+    def postprocess(self, x):
+        patch_feature = x["x_norm_patchtokens"].view(-1, 16, 16, 1024)
+        x1 = patch_feature.permute(0, 3, 1, 2)
+        with torch.no_grad():
+            x1 = self.aggregator(x1)
+        global_feature = torch.nn.functional.normalize(x1, p=2, dim=-1)
+        return super().postprocess(global_feature)
 
     @staticmethod
     def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return SelaTorchBackend(*args, **kwargs)
+        return SelaShrunkTorchBackend(*args, **kwargs)

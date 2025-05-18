@@ -43,11 +43,21 @@
 # %AUTHORS_END%
 # --------------------------------------------------------------------*/
 # %BANNER_END%
+from pathlib import Path
+from typing import Optional
+
 import numpy as np
 import torch
 
+from nnsb.backend import Backend
+from nnsb.backend.torch import TorchBackend
 from nnsb.feature_matchers.feature_matcher import FeatureMatcher
 from nnsb.feature_matchers.superglue.model.superglue_matcher import SuperGlueMatcher
+
+
+class SuperGlueTorchBackend(TorchBackend):
+    def __init__(self, path_to_sg_weights):
+        super().__init__(SuperGlueMatcher(path_to_sg_weights))
 
 
 class SuperGlue(FeatureMatcher):
@@ -56,56 +66,52 @@ class SuperGlue(FeatureMatcher):
     matcher with SuperPoint extractor.
     """
 
-    def __init__(self, path_to_sg_weights):
+    def __init__(
+        self,
+        path_to_sg_weights: Optional[Path] = None,
+        backend: Optional[Backend] = None,
+    ):
         """
         :param path_to_sg_weights: Path to SuperGlue weights
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
         :param gpu_index: The index of the GPU to be used
         """
         super().__init__()
-        self.super_glue_matcher = (
-            SuperGlueMatcher(path_to_sg_weights).eval().to(self.device)
-        )
+        self.backend = backend or self.get_torch_backend(path_to_sg_weights)
 
-    def match_feature(self, query_features, db_features, k_best):
-        num_matches = []
-        matched_kpts_query = []
-        matched_kpts_reference = []
+    def __call__(self, query_feat, db_feat):
+        keys = ["keypoints", "scores", "descriptors"]
+        pred = {"shape0": query_feat["image_size"], "shape1": db_feat["image_size"]}
+        pred |= {k + "0": query_feat[k].to(self.device) for k in keys}
+        pred |= {k + "1": db_feat[k].to(self.device) for k in keys}
+        pred = self.backend(pred)
+        return self.postprocess(query_feat, db_feat, pred)
 
-        for db_index, db_feature in enumerate(db_features):
-            keys = ["keypoints", "scores", "descriptors"]
-            pred = {
-                k + "0": (torch.tensor(v).to(self.device) if k in keys else v)
-                for k, v in query_features.items()
-            }
-            pred = {
-                **pred,
-                **{
-                    k + "1": (torch.tensor(v).to(self.device) if k in keys else v)
-                    for k, v in db_feature.items()
-                },
-            }
-            kpts0 = pred["keypoints0"][0].cpu().numpy()
-            kpts1 = pred["keypoints1"][0].cpu().numpy()
-            pred["shape0"] = query_features["image_size"]
-            pred["shape1"] = db_feature["image_size"]
+    def postprocess(self, query_feat, db_feat, matches):
+        matches = matches["matches0"][0].cpu().numpy()
+        valid = matches > -1
+        matched_kpts_query = query_feat["keypoints"][0][valid]
+        matched_kpts_reference = db_feat["keypoints"][0][matches[valid]]
+        num_matches = np.sum(valid)
 
-            with torch.no_grad():
-                pred = self.super_glue_matcher(pred)
-
-            matches = pred["matches0"][0].cpu().numpy()
-            valid = matches > -1
-            matched_kpts_query.append(kpts0[valid])
-            matched_kpts_reference.append(kpts1[matches[valid]])
-            num_matches.append(np.sum(valid))
-
-        num_matches = np.array(num_matches)
-        res_indices = (-num_matches).argsort()[:k_best]
-
-        matched_kpts_query = [matched_kpts_query[i] for i in res_indices]
-        matched_kpts_reference = [matched_kpts_reference[i] for i in res_indices]
         return (
-            res_indices,
+            num_matches,
             matched_kpts_query,
             matched_kpts_reference,
         )
+
+    @staticmethod
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+        return SuperGlueTorchBackend(*args, **kwargs)
+
+    def get_sample_input(self):
+        features = {
+            "keypoints0": torch.randint(0, 200, (1, 74, 2)),
+            "keypoints1": torch.randint(0, 200, (1, 81, 2)),
+            "scores0": torch.rand(1, 74),
+            "scores1": torch.rand(1, 81),
+            "descriptors0": torch.rand(1, 256, 74),
+            "descriptors1": torch.rand(1, 256, 81),
+            "image_size0": torch.tensor((200, 200)),
+        }
+        return {k: v.to(self.device) for k, v in features.items()}

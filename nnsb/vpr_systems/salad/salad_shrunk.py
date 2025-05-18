@@ -11,22 +11,24 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from pathlib import Path
 from typing import Optional
 import torch
 
 from nnsb.backend.backend import Backend
 from nnsb.backend.torch import TorchBackend
-from nnsb.model_conversion.torchscript import TorchScriptExportable
+from nnsb.model_conversion.rknn import RknnExportable
+from nnsb.model_conversion.tensorrt import TensorRTExportable
 from nnsb.vpr_systems.vpr_system import VPRSystem
-from nnsb.model_conversion.onnx import OnnxExportable
 
 
-class SaladTorchBackend(TorchBackend):
+class SaladShrunkTorchBackend(TorchBackend):
     def __init__(self):
-        super().__init__(torch.hub.load("serizba/salad", "dinov2_salad"))
+        model = torch.hub.load("serizba/salad", "dinov2_salad")
+        super().__init__(model.backbone)
 
 
-class SALAD(VPRSystem, OnnxExportable, TorchScriptExportable):
+class SALADShrunk(VPRSystem, RknnExportable, TensorRTExportable):
     """
     Wrapper for [SALAD](https://github.com/serizba/salad) VPR method
     """
@@ -42,7 +44,31 @@ class SALAD(VPRSystem, OnnxExportable, TorchScriptExportable):
         """
         super().__init__(resize // 14 * 14)
         self.backend = backend or self.get_torch_backend()
+        model = torch.hub.load("serizba/salad", "dinov2_salad").eval().to(self.device)
+        self.aggregator = model.aggregator.eval().to(self.device)
+
+    def postprocess(self, x):
+        with torch.no_grad():
+            x = self.aggregator(x)
+        return super().postprocess(x)
+
+    def export_rknn(
+        self,
+        output: Path,
+        intermediate_format="onnx",
+        quantization_dataset: Optional[Path] = None,
+    ):
+        """
+        Export the model to RKNN format.
+        :param output: Path to save the exported model.
+        :param quantization_dataset: Path to the dataset for quantization.
+        """
+        super().export_rknn(
+            output,
+            intermediate_format="onnx",
+            quantization_dataset=quantization_dataset,
+        )
 
     @staticmethod
     def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return SaladTorchBackend()
+        return SaladShrunkTorchBackend()

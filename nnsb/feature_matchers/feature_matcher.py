@@ -13,21 +13,19 @@
 #  limitations under the License.
 from abc import ABC, abstractmethod
 
-import torch
+from nnsb.method import Method
 
 
-class FeatureMatcher(ABC):
-    def __init__(self):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print('Running inference on device "{}"'.format(self.device))
+class FeatureMatcher(Method, ABC):
+    def __call__(self, query_feat, db_feat):
+        query_feat = self.preprocess(query_feat)
+        db_feat = self.preprocess(db_feat)
+        matches = self.backend((query_feat, db_feat))
+        return self.postprocess(query_feat, db_feat, matches)
+
+    def preprocess(self, feat):
+        return feat
 
     @abstractmethod
-    def match_feature(self, query_features, db_features, k_best):
-        """
-        Matches query features with database features
-        :param query_features: Features for matching
-        :param db_features: Database features
-        :param k_best: Determines how many top predictions will be returned
-        :return: Indices of matched images from database, chosen query features, chosen DB features
-        """
+    def postprocess(self, query_feat, db_feat, matches):
         pass

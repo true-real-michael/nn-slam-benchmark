@@ -11,11 +11,27 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import numpy as np
+from typing import Optional
+
 import torch
 
+from nnsb.backend import Backend
+from nnsb.backend.torch import TorchBackend
 from nnsb.feature_matchers import FeatureMatcher
 from nnsb.feature_matchers.lightglue.model.lightglue_matcher import LightGlueMatcher
+
+
+class LightGlueTorchBackend(TorchBackend):
+    def __init__(self):
+        class Wrapper(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.model = LightGlueMatcher(features="superpoint")
+
+            def forward(self, x):
+                return self.model({"image0": x[0], "image1": x[1]})["matches"][0]
+
+        super().__init__(Wrapper())
 
 
 class LightGlue(FeatureMatcher):
@@ -24,53 +40,32 @@ class LightGlue(FeatureMatcher):
     matcher with SuperPoint extractor.
     """
 
-    def __init__(self):
-        """
-        :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
-        """
+    def __init__(self, backend: Optional[Backend] = None):
         super().__init__()
-        self.light_glue_matcher = (
-            LightGlueMatcher(features="superpoint").eval().to(self.device)
-        )
+        self.backend = backend or LightGlueTorchBackend()
 
-    def match_feature(self, query_features, db_features, k_best):
-        num_matches = []
-        matched_kpts_query = []
-        matched_kpts_reference = []
+    def preprocess(self, feat):
+        keys = ["keypoints", "scores", "descriptors"]
+        feat = {
+            k: (torch.tensor(v).to(self.device) if k in keys else v)
+            for k, v in feat.items()
+        }
+        feat["descriptors"] = feat["descriptors"].transpose(-1, -2).contiguous()
+        return feat
 
-        for db_index, db_feature in enumerate(db_features):
-            keys = ["keypoints", "scores", "descriptors"]
-            query_features = {
-                k: (torch.tensor(v).to(self.device) if k in keys else v)
-                for k, v in query_features.items()
-            }
-            db_feature = {
-                k: (torch.tensor(v).to(self.device) if k in keys else v)
-                for k, v in db_feature.items()
-            }
-            db_feature["descriptors"] = (
-                db_feature["descriptors"].transpose(-1, -2).contiguous()
-            )
-            query_features["descriptors"] = (
-                query_features["descriptors"].transpose(-1, -2).contiguous()
-            )
-            matches = self.light_glue_matcher(
-                {"image0": query_features, "image1": db_feature}
-            )
-            matches = matches["matches"][0]
-            points_query = query_features["keypoints"][0][matches[..., 0]].cpu().numpy()
-            points_db = db_feature["keypoints"][0][matches[..., 1]].cpu().numpy()
-            num_matches.append(len(points_query))
-            matched_kpts_query.append(points_query)
-            matched_kpts_reference.append(points_db)
+    def postprocess(self, query_feat, db_feat, matches):
+        points_query = query_feat["keypoints"][0][matches[..., 0]].cpu().numpy()
+        points_db = db_feat["keypoints"][0][matches[..., 1]].cpu().numpy()
+        return len(points_query), points_query, points_db
 
-        num_matches = np.array(num_matches)
-        res_indices = (-num_matches).argsort()[:k_best]
+    @staticmethod
+    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+        return LightGlueTorchBackend()
 
-        matched_kpts_query = [matched_kpts_query[i] for i in res_indices]
-        matched_kpts_reference = [matched_kpts_reference[i] for i in res_indices]
-        return (
-            res_indices,
-            matched_kpts_query,
-            matched_kpts_reference,
-        )
+    def get_sample_input(self):
+        return {
+            "keypoints": torch.randint(0, 200, (1, 100, 2)),
+            "descriptors": torch.rand((1, 256, 100)),
+            "scores": torch.rand((1, 100)),
+            "image_size": torch.tensor((200, 200)),
+        }
