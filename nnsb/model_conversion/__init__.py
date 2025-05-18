@@ -26,6 +26,5 @@ for module_name, class_name in _optional_backends.items():
         module = importlib.import_module(f".{module_name}", __package__)
         globals()[class_name] = getattr(module, class_name)
         __all__.append(class_name)
-    except (ImportError, AttributeError, OSError) as e:
+    except (ImportError, AttributeError, OSError):
         pass
-
