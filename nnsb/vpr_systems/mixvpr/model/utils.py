@@ -1,5 +1,5 @@
-#  Copyright (c) 2023, Amar Ali-bey, Brahim Chaib-draa, Philippe Giguère,
-#  Ivan Moskalenko, Anastasiia Kornilova
+#  Copyright (c) 2025, Amar Ali-bey, Brahim Chaib-draa, Philippe Giguère,
+#  Ivan Moskalenko, Anastasiia Kornilova, Mikhail Kiselev
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
