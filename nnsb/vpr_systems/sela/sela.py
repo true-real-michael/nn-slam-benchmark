@@ -11,9 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import numpy as np
 import torch
-from pathlib import Path
 
 from nnsb.backend.torch import TorchBackend
 from nnsb.model_conversion.torchscript import TorchScriptExportable
@@ -31,10 +29,12 @@ class SelaTorchBackend(TorchBackend):
 
             def forward(self, x):
                 return self.model.global_feat(x)
-            
+
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = GeoLocalizationNet(dinov2_path)
-        state_dict = torch.load(path_to_state_dict, map_location=device)["model_state_dict"]
+        state_dict = torch.load(path_to_state_dict, map_location=device)[
+            "model_state_dict"
+        ]
         state_dict = {k[7:]: v for k, v in state_dict.items()}
         model.load_state_dict(state_dict)
         self.model = Wrapper(model).eval().to(self.device)
@@ -45,18 +45,15 @@ class Sela(VPRSystem, OnnxExportable, TorchScriptExportable):
     Wrapper for [Sela](https://github.com/Lu-Feng/SelaVPR) VPR method
     """
 
-    def __init__(
-        self,
-        path_to_state_dict = None,
-        dinov2_path = None,
-        backend = None
-    ):
+    def __init__(self, path_to_state_dict=None, dinov2_path=None, backend=None):
         """
         :param path_to_state_dict: Path to the SelaVPR weights
         :param dinov2_path: Path to the DINOv2 (ViT-L/14) foundation model
         """
         super().__init__(224)
-        self.backend = backend or self.get_torch_backend(path_to_state_dict, dinov2_path)
+        self.backend = backend or self.get_torch_backend(
+            path_to_state_dict, dinov2_path
+        )
 
     @staticmethod
     def get_torch_backend(*args, **kwargs) -> TorchBackend:

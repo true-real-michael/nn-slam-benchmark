@@ -13,6 +13,7 @@ class LighterGlueTorchBackend(TorchBackend):
             def __init__(self, model):
                 super().__init__()
                 self.model = model
+
             def forward(self, x):
                 return self.model.match_lighterglue(x[0], x[1])[2]
 
@@ -43,7 +44,6 @@ class LighterGlue(FeatureMatcher):
     @staticmethod
     def get_torch_backend(*args, **kwargs) -> TorchBackend:
         return LighterGlueTorchBackend()
-
 
     def get_sample_input(self):
         return {

@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torch import nn
 
+
 class SuperPoint(nn.Module):
     def __init__(self, resize: int = 800):
         super(SuperPoint, self).__init__()
@@ -26,7 +27,6 @@ class SuperPoint(nn.Module):
         self.resize = resize
 
     def forward(self, x):
-
         # Shared Encoder.
         x = self.relu(self.conv1a(x))
         x = self.relu(self.conv1b(x))
@@ -154,7 +154,7 @@ class SuperPointFrontend(object):
             # Account for top and left padding.
             pt = (rc[0] + pad, rc[1] + pad)
             if grid[pt[1], pt[0]] == 1:  # If not yet suppressed.
-                grid[pt[1] - pad : pt[1] + pad + 1, pt[0] - pad : pt[0] + pad + 1] = 0
+                grid[pt[1] - pad: pt[1] + pad + 1, pt[0] - pad: pt[0] + pad + 1] = 0
                 grid[pt[1], pt[0]] = -1
                 count += 1
         # Get all surviving -1's and return sorted array of remaining corners.

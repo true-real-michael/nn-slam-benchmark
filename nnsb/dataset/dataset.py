@@ -25,32 +25,36 @@ def path_to_pil_img(path):
 
 class BaseDataset(torch.utils.data.Dataset):
     def __init__(
-            self,
-            images_dir: Path,
-            resize=224,
-            limit=None,
-            superpoint=False,
+        self,
+        images_dir: Path,
+        resize=224,
+        limit=None,
+        superpoint=False,
     ):
         super().__init__()
         if not images_dir.exists():
             raise FileNotFoundError(f"Images folder {images_dir} not found.")
 
         if not superpoint:
-            self.transform = transforms.Compose([
-                transforms.Resize(resize),
-                transforms.CenterCrop(resize),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                ),
-            ])
+            self.transform = transforms.Compose(
+                [
+                    transforms.Resize(resize),
+                    transforms.CenterCrop(resize),
+                    transforms.ToTensor(),
+                    transforms.Normalize(
+                        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                    ),
+                ]
+            )
         else:
-            self.transform = transforms.Compose([
-                transforms.Resize(resize),
-                transforms.CenterCrop(resize),
-                transforms.ToTensor(),
-                transforms.Grayscale(),
-            ])
+            self.transform = transforms.Compose(
+                [
+                    transforms.Resize(resize),
+                    transforms.CenterCrop(resize),
+                    transforms.ToTensor(),
+                    transforms.Grayscale(),
+                ]
+            )
 
         self.images_paths = sorted(images_dir.glob("*.png")) + sorted(
             images_dir.glob("*.jpg")
@@ -68,6 +72,7 @@ class BaseDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.images_paths)
 
+
 class Data(BaseDataset):
     def __init__(
         self,
@@ -77,7 +82,12 @@ class Data(BaseDataset):
         limit=None,
         superpoint=False,
     ):
-        super().__init__(dataset_dir / dataset_name / "images/test/database", resize, limit, superpoint)
+        super().__init__(
+            dataset_dir / dataset_name / "images/test/database",
+            resize,
+            limit,
+            superpoint,
+        )
 
     def get_knn(self, k_neighbors=5):
         from sklearn.neighbors import NearestNeighbors
@@ -103,7 +113,12 @@ class Queries(BaseDataset):
         limit=None,
         superpoint=False,
     ):
-        super().__init__(dataset_dir / dataset_name / "images/test/queries", resize, limit, superpoint)
+        super().__init__(
+            dataset_dir / dataset_name / "images/test/queries",
+            resize,
+            limit,
+            superpoint,
+        )
         if knn is not None:
             self.queries_utms = np.array(
                 [

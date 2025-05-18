@@ -27,9 +27,12 @@ class LightGlueTorchBackend(TorchBackend):
             def __init__(self):
                 super().__init__()
                 self.model = LightGlueMatcher(features="superpoint")
+
             def forward(self, x):
                 return self.model({"image0": x[0], "image1": x[1]})["matches"][0]
+
         super().__init__(Wrapper())
+
 
 class LightGlue(FeatureMatcher):
     """

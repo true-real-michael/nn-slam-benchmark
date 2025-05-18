@@ -37,27 +37,30 @@ class NetVLADTorchBackend(TorchBackend):
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         weights = weights
-        checkpoint = torch.load(
-            weights, map_location=lambda storage, loc: storage
-        )
+        checkpoint = torch.load(weights, map_location=lambda storage, loc: storage)
         encoder_dim, encoder = get_backend()
         num_clusters = checkpoint["state_dict"]["pool.centroids"].shape[0]
         num_pcs = checkpoint["state_dict"]["WPCA.0.bias"].shape[0]
-        model = get_model(
-            encoder,
-            encoder_dim,
-            num_clusters,
-            append_pca_layer=True,
-            num_pcs=num_pcs,
-        ).eval().to(device)
-        
-        super().__init__(torch.nn.Sequential(
-            model.encoder,
-            model.pool,
-            Unsqueeze().eval().to(device),
-            model.WPCA,
-        ))
+        model = (
+            get_model(
+                encoder,
+                encoder_dim,
+                num_clusters,
+                append_pca_layer=True,
+                num_pcs=num_pcs,
+            )
+            .eval()
+            .to(device)
+        )
 
+        super().__init__(
+            torch.nn.Sequential(
+                model.encoder,
+                model.pool,
+                Unsqueeze().eval().to(device),
+                model.WPCA,
+            )
+        )
 
 
 class NetVLAD(VPRSystem, RknnExportable, TensorRTExportable):
@@ -66,7 +69,10 @@ class NetVLAD(VPRSystem, RknnExportable, TensorRTExportable):
     """
 
     def __init__(
-        self, backend: Optional[Backend] = None, weights: Optional[str] = None, resize: int = 800
+        self,
+        backend: Optional[Backend] = None,
+        weights: Optional[str] = None,
+        resize: int = 800,
     ):
         """
         :param path_to_weights: Path to the weights

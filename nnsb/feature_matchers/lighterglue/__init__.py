@@ -1,1 +1,0 @@
-from nnsb.feature_matchers.lighterglue.lighterglue import LighterGlue

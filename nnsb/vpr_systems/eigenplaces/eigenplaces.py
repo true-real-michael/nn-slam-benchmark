@@ -11,10 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import torch
 
 from nnsb.backend.backend import Backend
@@ -26,12 +24,14 @@ from nnsb.vpr_systems.vpr_system import VPRSystem
 
 class EigenPlacesTorchBackend(TorchBackend):
     def __init__(self, backbone, fc_output_dim):
-        super().__init__(torch.hub.load(
-            "gmberton/eigenplaces",
-            "get_trained_model",
-            backbone=backbone,
-            fc_output_dim=fc_output_dim,
-        ))
+        super().__init__(
+            torch.hub.load(
+                "gmberton/eigenplaces",
+                "get_trained_model",
+                backbone=backbone,
+                fc_output_dim=fc_output_dim,
+            )
+        )
 
 
 class EigenPlaces(VPRSystem, RknnExportable, TensorRTExportable):

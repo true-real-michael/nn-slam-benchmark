@@ -66,7 +66,11 @@ class SuperGlue(FeatureMatcher):
     matcher with SuperPoint extractor.
     """
 
-    def __init__(self, path_to_sg_weights: Optional[Path] = None, backend: Optional[Backend] = None):
+    def __init__(
+        self,
+        path_to_sg_weights: Optional[Path] = None,
+        backend: Optional[Backend] = None,
+    ):
         """
         :param path_to_sg_weights: Path to SuperGlue weights
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
@@ -78,12 +82,8 @@ class SuperGlue(FeatureMatcher):
     def __call__(self, query_feat, db_feat):
         keys = ["keypoints", "scores", "descriptors"]
         pred = {"shape0": query_feat["image_size"], "shape1": db_feat["image_size"]}
-        pred |= {
-            k + "0": query_feat[k].to(self.device) for k in keys
-        }
-        pred |= {
-            k + "1": db_feat[k].to(self.device) for k in keys
-        }
+        pred |= {k + "0": query_feat[k].to(self.device) for k in keys}
+        pred |= {k + "1": db_feat[k].to(self.device) for k in keys}
         pred = self.backend(pred)
         return self.postprocess(query_feat, db_feat, pred)
 
@@ -112,6 +112,6 @@ class SuperGlue(FeatureMatcher):
             "scores1": torch.rand(1, 81),
             "descriptors0": torch.rand(1, 256, 74),
             "descriptors1": torch.rand(1, 256, 81),
-            "image_size0": torch.tensor((200, 200))
+            "image_size0": torch.tensor((200, 200)),
         }
         return {k: v.to(self.device) for k, v in features.items()}

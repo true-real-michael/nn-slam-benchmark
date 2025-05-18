@@ -33,7 +33,6 @@ class LocalizationPipeline:
         results = self.retrieval_system.process_batch(query_seq, k_closest, k_closest)
         return [result[0][0] for result in results]
 
-
     def __call__(
         self,
         query_seq: Queries,
@@ -57,10 +56,6 @@ class LocalizationPipeline:
             )
 
             res_prediction = res_prediction[0]
-            matched_kpts_query = matched_kpts_query[0]
-            matched_kpts_reference = matched_kpts_reference[0]
-
-            chosen_sat_image = self.retrieval_system.dataset[res_prediction]
             localization_results.append(res_prediction)
         self.retrieval_system.end_of_query_seq()
         return localization_results

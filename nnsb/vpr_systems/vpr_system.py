@@ -31,7 +31,7 @@ class VPRSystem(Method, ABC):
         return torch.randn((1, 3, self.resize, self.resize)).cpu()
 
     def preprocess(self, x) -> torch.Tensor:
-        return x.to(self.device).unsqueeze(0)    
+        return x.to(self.device).unsqueeze(0)
 
     def postprocess(self, x) -> torch.Tensor:
         return x.cpu().numpy()[0]
@@ -46,4 +46,3 @@ class VPRSystem(Method, ABC):
         x = self.preprocess(x)
         x = self.backend(x)
         return self.postprocess(x)
-

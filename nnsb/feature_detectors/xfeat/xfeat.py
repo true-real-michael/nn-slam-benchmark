@@ -29,7 +29,9 @@ class XFeat(FeatureDetector):
         self.backend = backend or self.get_torch_backend()
 
     def postprocess(self, x):
-        x["image_size"] = torch.tensor((self.resize, self.resize)).to(self.device).float()
+        x["image_size"] = (
+            torch.tensor((self.resize, self.resize)).to(self.device).float()
+        )
         return x
 
     @staticmethod

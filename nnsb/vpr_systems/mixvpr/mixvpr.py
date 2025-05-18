@@ -13,7 +13,6 @@
 #  limitations under the License.
 from typing import Optional
 
-import numpy as np
 import torch
 
 from nnsb.backend.backend import Backend
@@ -53,7 +52,9 @@ class MixVPR(VPRSystem, TorchScriptExportable, OnnxExportable):
     Implementation of [MixVPR](https://github.com/amaralibey/MixVPR) global localization method.
     """
 
-    def __init__(self, ckpt_path: Optional[str] = None, backend: Optional[Backend] = None):
+    def __init__(
+        self, ckpt_path: Optional[str] = None, backend: Optional[Backend] = None
+    ):
         """
         :param ckpt_path: Path to the checkpoint file
         :param gpu_index: The index of the GPU to be used

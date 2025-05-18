@@ -11,10 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import torch
 
 from nnsb.backend.backend import Backend
@@ -26,12 +24,14 @@ from nnsb.vpr_systems.vpr_system import VPRSystem
 
 class CosPlaceTorchBackend(TorchBackend):
     def __init__(self, backbone, fc_output_dim):
-        super().__init__(torch.hub.load(
-            "gmberton/cosplace",
-            "get_trained_model",
-            backbone=backbone,
-            fc_output_dim=fc_output_dim,
-        ))
+        super().__init__(
+            torch.hub.load(
+                "gmberton/cosplace",
+                "get_trained_model",
+                backbone=backbone,
+                fc_output_dim=fc_output_dim,
+            )
+        )
 
 
 class CosPlace(VPRSystem, RknnExportable, TensorRTExportable):
@@ -58,4 +58,3 @@ class CosPlace(VPRSystem, RknnExportable, TensorRTExportable):
     @staticmethod
     def get_torch_backend(*args, **kwargs):
         return CosPlaceTorchBackend(*args, **kwargs)
-

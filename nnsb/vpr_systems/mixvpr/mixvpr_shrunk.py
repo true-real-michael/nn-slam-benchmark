@@ -14,9 +14,7 @@
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import torch
-import torchvision
 
 from nnsb.backend.backend import Backend
 from nnsb.backend.torch import TorchBackend
@@ -50,13 +48,14 @@ class MixVprShrunkTorchBackend(TorchBackend):
         super().__init__(model.backbone)
 
 
-
 class MixVPRShrunk(VPRSystem, RknnExportable, TensorRTExportable):
     """
     Implementation of [MixVPR](https://github.com/amaralibey/MixVPR) global localization method.
     """
 
-    def __init__(self, ckpt_path: Optional[str] = None, backend: Optional[Backend] = None):
+    def __init__(
+        self, ckpt_path: Optional[str] = None, backend: Optional[Backend] = None
+    ):
         """
         :param ckpt_path: Path to the checkpoint file
         :param gpu_index: The index of the GPU to be used
@@ -86,16 +85,24 @@ class MixVPRShrunk(VPRSystem, RknnExportable, TensorRTExportable):
     def get_torch_backend(*args, **kwargs) -> TorchBackend:
         return MixVprShrunkTorchBackend(*args, **kwargs)
 
-
     def postprocess(self, x):
         with torch.no_grad():
             x = self.aggregator(x)
         return super().postprocess(x)
 
-    def export_rknn(self, output: Path, intermediate_format="onnx", quantization_dataset: Optional[Path] = None):
+    def export_rknn(
+        self,
+        output: Path,
+        intermediate_format="onnx",
+        quantization_dataset: Optional[Path] = None,
+    ):
         """
         Export the model to RKNN format.
         :param output: Path to save the exported model.
         :param quantization_dataset: Path to the dataset for quantization.
         """
-        super().export_rknn(output, intermediate_format="onnx", quantization_dataset=quantization_dataset)
+        super().export_rknn(
+            output,
+            intermediate_format="onnx",
+            quantization_dataset=quantization_dataset,
+        )

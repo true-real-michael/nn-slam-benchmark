@@ -28,7 +28,6 @@ class SaladShrunkTorchBackend(TorchBackend):
         super().__init__(model.backbone)
 
 
-
 class SALADShrunk(VPRSystem, RknnExportable, TensorRTExportable):
     """
     Wrapper for [SALAD](https://github.com/serizba/salad) VPR method
@@ -52,14 +51,23 @@ class SALADShrunk(VPRSystem, RknnExportable, TensorRTExportable):
         with torch.no_grad():
             x = self.aggregator(x)
         return super().postprocess(x)
-    
-    def export_rknn(self, output: Path, intermediate_format="onnx", quantization_dataset: Optional[Path] = None):
+
+    def export_rknn(
+        self,
+        output: Path,
+        intermediate_format="onnx",
+        quantization_dataset: Optional[Path] = None,
+    ):
         """
         Export the model to RKNN format.
         :param output: Path to save the exported model.
         :param quantization_dataset: Path to the dataset for quantization.
         """
-        super().export_rknn(output, intermediate_format="onnx", quantization_dataset=quantization_dataset)
+        super().export_rknn(
+            output,
+            intermediate_format="onnx",
+            quantization_dataset=quantization_dataset,
+        )
 
     @staticmethod
     def get_torch_backend(*args, **kwargs) -> TorchBackend:
