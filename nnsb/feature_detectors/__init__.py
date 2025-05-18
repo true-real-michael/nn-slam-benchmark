@@ -1,4 +1,4 @@
-#  Copyright (c) 2023, Ivan Moskalenko, Anastasiia Kornilova
+#  Copyright (c) 2025, Mikhail Kiselev, Anastasiia Kornilova
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -11,3 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from .superpoint import SuperPoint, SuperPointShrunk
+from .xfeat import XFeat
+from .feature_detector import FeatureDetector
+
+__all__ = ["XFeat", "SuperPoint", "SuperPointShrunk", "FeatureDetector"]

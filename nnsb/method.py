@@ -5,6 +5,9 @@ import torch
 from nnsb.backend.torch import TorchBackend
 
 
+__all__ = ["Method"]
+
+
 class Method(ABC):
     """
     Base class for all methods.
