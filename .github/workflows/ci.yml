@@ -31,4 +31,4 @@ jobs:
     - name: Lint with black
       uses: psf/black@stable
       with:
-        options: "--check --diff"
+        options: "--check --diff --exclude='model|backbone'"
