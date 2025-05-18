@@ -1,0 +1,34 @@
+name: Lint
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lints-and-tests:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install flake8
+
+    - name: Lint with flake8
+      run: |
+        flake8 nnsb --count --max-line-length=160 --statistics --ignore=E721,E741 --exclude='**/dinov2/*,**/model/*,**/network.py,**/backbone/*'
+
+    - name: Lint with black
+      uses: psf/black@stable
+      with:
+        options: "--check --diff"
