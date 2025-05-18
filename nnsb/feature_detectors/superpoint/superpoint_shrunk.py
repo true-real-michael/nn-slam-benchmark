@@ -10,6 +10,7 @@ from nnsb.feature_detectors.superpoint.model_shrunk import (
     SuperPoint as SuperPointModule,
     SuperPointFrontend,
 )
+from nnsb.model_conversion.rknn import RknnExportable
 
 
 class SuperPointShrunkTorchBackend(TorchBackend):
@@ -26,7 +27,7 @@ class SuperPointShrunkTorchBackend(TorchBackend):
         super().__init__(model)
 
 
-class SuperPointShrunk(FeatureDetector):
+class SuperPointShrunk(FeatureDetector, RknnExportable):
     def __init__(
         self, resize, backend: Optional[Backend] = None, ckpt: Optional[Path] = None
     ):
