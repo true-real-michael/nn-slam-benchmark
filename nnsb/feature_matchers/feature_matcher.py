@@ -13,21 +13,18 @@
 #  limitations under the License.
 from abc import ABC, abstractmethod
 
-import torch
-
 from nnsb.method import Method
 
 
-class FeatureMatcher(Method):
+class FeatureMatcher(Method, ABC):
     def __call__(self, query_feat, db_feat):
         query_feat = self.preprocess(query_feat)
         db_feat = self.preprocess(db_feat)
         matches = self.backend((query_feat, db_feat))
         return self.postprocess(query_feat, db_feat, matches)
 
-    @abstractmethod
     def preprocess(self, feat):
-        pass
+        return feat
 
     @abstractmethod
     def postprocess(self, query_feat, db_feat, matches):
