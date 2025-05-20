@@ -26,9 +26,9 @@ class SelaShrunkTorchBackend(TorchBackend):
     def __init__(self, path_to_state_dict, dinov2_path):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = GeoLocalizationNet(dinov2_path)
-        state_dict = torch.load(path_to_state_dict, map_location=device)[
-            "model_state_dict"
-        ]
+        state_dict = torch.load(
+            path_to_state_dict, map_location=device, weights_only=False
+        )["model_state_dict"]
         state_dict = {k[7:]: v for k, v in state_dict.items()}
         model.load_state_dict(state_dict)
         super().__init__(model.backbone)
@@ -48,9 +48,9 @@ class SelaShrunk(VPRSystem, RknnExportable, TensorRTExportable):
             backend or SelaShrunkTorchBackend(path_to_state_dict, dinov2_path), 224
         )
         model = GeoLocalizationNet(dinov2_path)
-        state_dict = torch.load(path_to_state_dict, map_location=self.device)[
-            "model_state_dict"
-        ]
+        state_dict = torch.load(
+            path_to_state_dict, map_location=self.device, weights_only=False
+        )["model_state_dict"]
         state_dict = {k[7:]: v for k, v in state_dict.items()}
         model.load_state_dict(state_dict)
         self.aggregator = model.aggregation.eval().to(self.device)
