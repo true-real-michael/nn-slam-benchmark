@@ -41,8 +41,7 @@ class LightGlue(FeatureMatcher):
     """
 
     def __init__(self, backend: Optional[Backend] = None):
-        super().__init__()
-        self.backend = backend or LightGlueTorchBackend()
+        super().__init__(backend or LightGlueTorchBackend())
 
     def preprocess(self, feat):
         keys = ["keypoints", "scores", "descriptors"]
@@ -57,10 +56,6 @@ class LightGlue(FeatureMatcher):
         points_query = query_feat["keypoints"][0][matches[..., 0]].cpu().numpy()
         points_db = db_feat["keypoints"][0][matches[..., 1]].cpu().numpy()
         return len(points_query), points_query, points_db
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return LightGlueTorchBackend()
 
     def get_sample_input(self):
         return {

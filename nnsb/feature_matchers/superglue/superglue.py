@@ -74,10 +74,8 @@ class SuperGlue(FeatureMatcher):
         """
         :param path_to_sg_weights: Path to SuperGlue weights
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
-        :param gpu_index: The index of the GPU to be used
         """
-        super().__init__()
-        self.backend = backend or self.get_torch_backend(path_to_sg_weights)
+        super().__init__(backend or SuperGlueTorchBackend(path_to_sg_weights))
 
     def __call__(self, query_feat, db_feat):
         keys = ["keypoints", "scores", "descriptors"]
@@ -99,10 +97,6 @@ class SuperGlue(FeatureMatcher):
             matched_kpts_query,
             matched_kpts_reference,
         )
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return SuperGlueTorchBackend(*args, **kwargs)
 
     def get_sample_input(self):
         features = {

@@ -33,10 +33,7 @@ class SuperPointShrunk(FeatureDetector, RknnExportable):
     ):
         if not backend and not ckpt:
             raise RuntimeError("Please provide backend or ckpt")
-        super().__init__(resize)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.resize = resize
-        self.backend = backend or self.get_torch_backend(ckpt)
+        super().__init__(backend or SuperPointShrunkTorchBackend(ckpt), resize)
         self.postprocessor = SuperPointFrontend(resize, resize)
 
     def postprocess(self, x):
@@ -48,7 +45,3 @@ class SuperPointShrunk(FeatureDetector, RknnExportable):
             "descriptors": torch.tensor(desc).to(self.device),
             "image_size": torch.tensor((self.resize, self.resize)).to(self.device),
         }
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return SuperPointShrunkTorchBackend(*args, **kwargs)

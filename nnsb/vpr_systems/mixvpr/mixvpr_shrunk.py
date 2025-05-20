@@ -60,8 +60,7 @@ class MixVPRShrunk(VPRSystem, RknnExportable, TensorRTExportable):
         :param ckpt_path: Path to the checkpoint file
         :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(MIXVPR_RESIZE)
-        self.backend = backend or self.get_torch_backend(ckpt_path)
+        super().__init__(backend or MixVprShrunkTorchBackend(ckpt_path), MIXVPR_RESIZE)
 
         model = VPRModel(
             backbone_arch="resnet50",
@@ -80,10 +79,6 @@ class MixVPRShrunk(VPRSystem, RknnExportable, TensorRTExportable):
         state_dict = torch.load(ckpt_path, map_location=self.device)
         model.load_state_dict(state_dict)
         self.aggregator = model.eval().to(self.device).aggregator
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return MixVprShrunkTorchBackend(*args, **kwargs)
 
     def postprocess(self, x):
         with torch.no_grad():

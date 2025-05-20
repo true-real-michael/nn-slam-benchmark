@@ -77,15 +77,8 @@ class NetVLAD(VPRSystem, RknnExportable, TensorRTExportable):
         """
         :param path_to_weights: Path to the weights
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
-        :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(resize)
-        self.resize = resize
-        self.backend = backend or self.get_torch_backend(weights)
+        super().__init__(backend or NetVLADTorchBackend(weights), resize)
 
     def postprocess(self, x):
         return x.detach().cpu().numpy()[0]
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return NetVLADTorchBackend(*args, **kwargs)

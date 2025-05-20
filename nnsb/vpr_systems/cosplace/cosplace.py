@@ -50,11 +50,7 @@ class CosPlace(VPRSystem, RknnExportable, TensorRTExportable):
         :param backbone: Type of backbone
         :param fc_output_dim: Dimension of descriptors
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
-        :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(resize)
-        self.backend = backend or self.get_torch_backend(backbone, fc_output_dim)
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs):
-        return CosPlaceTorchBackend(*args, **kwargs)
+        super().__init__(
+            backend or CosPlaceTorchBackend(backbone, fc_output_dim), resize
+        )

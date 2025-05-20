@@ -38,8 +38,7 @@ class LighterGlueTorchBackend(TorchBackend):
 
 class LighterGlue(FeatureMatcher):
     def __init__(self, backend: Optional[Backend] = None):
-        super().__init__()
-        self.backend = backend or self.get_torch_backend()
+        super().__init__(backend or LighterGlueTorchBackend())
 
     def preprocess(self, features):
         keys = ["keypoints", "scores", "descriptors", "image_size"]
@@ -53,10 +52,6 @@ class LighterGlue(FeatureMatcher):
         points_query = query_feat["keypoints"][matches[..., 0]].cpu().numpy()
         points_db = db_feat["keypoints"][matches[..., 1]].cpu().numpy()
         return len(points_query), points_query, points_db
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return LighterGlueTorchBackend()
 
     def get_sample_input(self):
         return {

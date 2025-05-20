@@ -15,13 +15,14 @@ from abc import ABC
 
 import torch
 
+from nnsb.backend import Backend
 from nnsb.method import Method
 
 
 class FeatureDetector(Method, ABC):
-    def __init__(self, resize: int):
+    def __init__(self, backend: Backend, resize: int):
         self.resize = resize
-        super().__init__()
+        super().__init__(backend)
 
     def preprocess(self, x):
         return x.to(self.device).unsqueeze(0)

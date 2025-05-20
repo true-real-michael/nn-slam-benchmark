@@ -57,11 +57,5 @@ class MixVPR(VPRSystem, TorchScriptExportable, OnnxExportable):
     ):
         """
         :param ckpt_path: Path to the checkpoint file
-        :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(MIXVPR_RESIZE)
-        self.backend = backend or self.get_torch_backend(ckpt_path)
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return MixVprTorchBackend(*args, **kwargs)
+        super().__init__(backend or MixVprTorchBackend(ckpt_path), MIXVPR_RESIZE)

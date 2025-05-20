@@ -15,10 +15,7 @@ class SuperPointTorchBackend(TorchBackend):
 
 class SuperPoint(FeatureDetector):
     def __init__(self, resize, backend: Optional[Backend] = None):
-        super().__init__(resize)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.resize = resize
-        self.backend = backend or self.get_torch_backend()
+        super().__init__(backend or SuperPointTorchBackend(), resize)
 
     def preprocess(self, x):
         x = super().preprocess(x)
@@ -27,7 +24,3 @@ class SuperPoint(FeatureDetector):
     def postprocess(self, x):
         x["image_size"] = torch.tensor((self.resize, self.resize)).to(self.device)
         return x
-
-    @staticmethod
-    def get_torch_backend():
-        return SuperPointTorchBackend()

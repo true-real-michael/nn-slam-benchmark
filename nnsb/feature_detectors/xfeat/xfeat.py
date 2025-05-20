@@ -38,15 +38,10 @@ class XFeatTorchBackend(TorchBackend):
 
 class XFeat(FeatureDetector):
     def __init__(self, resize, backend: Optional[Backend] = None):
-        super().__init__(resize)
-        self.backend = backend or self.get_torch_backend()
+        super().__init__(backend or XFeatTorchBackend(), resize)
 
     def postprocess(self, x):
         x["image_size"] = (
             torch.tensor((self.resize, self.resize)).to(self.device).float()
         )
         return x
-
-    @staticmethod
-    def get_torch_backend():
-        return XFeatTorchBackend()

@@ -42,8 +42,7 @@ class SALADShrunk(VPRSystem, RknnExportable, TensorRTExportable):
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
         :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(resize // 14 * 14)
-        self.backend = backend or self.get_torch_backend()
+        super().__init__(backend or SaladShrunkTorchBackend(), resize // 14 * 14)
         model = torch.hub.load("serizba/salad", "dinov2_salad").eval().to(self.device)
         self.aggregator = model.aggregator.eval().to(self.device)
 
@@ -68,7 +67,3 @@ class SALADShrunk(VPRSystem, RknnExportable, TensorRTExportable):
             intermediate_format="onnx",
             quantization_dataset=quantization_dataset,
         )
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return SaladShrunkTorchBackend()

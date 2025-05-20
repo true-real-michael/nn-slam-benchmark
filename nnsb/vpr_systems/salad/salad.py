@@ -40,9 +40,4 @@ class SALAD(VPRSystem, OnnxExportable, TorchScriptExportable):
         :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
         :param gpu_index: The index of the GPU to be used
         """
-        super().__init__(resize // 14 * 14)
-        self.backend = backend or self.get_torch_backend()
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return SaladTorchBackend()
+        super().__init__(backend or SaladTorchBackend(), resize // 14 * 14)

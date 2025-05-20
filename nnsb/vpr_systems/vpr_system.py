@@ -16,15 +16,16 @@ from abc import ABC
 import torch
 import numpy as np
 
+from nnsb.backend import Backend
 from nnsb.method import Method
 
 
 class VPRSystem(Method, ABC):
-    def __init__(self, resize: int):
+    def __init__(self, backend: Backend, resize: int):
         """
         :param gpu_index: The index of the GPU to be used
         """
-        super().__init__()
+        super().__init__(backend)
         self.resize = resize
 
     def get_sample_input(self) -> torch.Tensor:

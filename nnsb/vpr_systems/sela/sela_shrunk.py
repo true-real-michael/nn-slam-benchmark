@@ -44,9 +44,8 @@ class SelaShrunk(VPRSystem, RknnExportable, TensorRTExportable):
         :param path_to_state_dict: Path to the SelaVPR weights
         :param dinov2_path: Path to the DINOv2 (ViT-L/14) foundation model
         """
-        super().__init__(224)
-        self.backend = backend or self.get_torch_backend(
-            path_to_state_dict, dinov2_path
+        super().__init__(
+            backend or SelaShrunkTorchBackend(path_to_state_dict, dinov2_path), 224
         )
         model = GeoLocalizationNet(dinov2_path)
         state_dict = torch.load(path_to_state_dict, map_location=self.device)[
@@ -80,7 +79,3 @@ class SelaShrunk(VPRSystem, RknnExportable, TensorRTExportable):
             x1 = self.aggregator(x1)
         global_feature = torch.nn.functional.normalize(x1, p=2, dim=-1)
         return super().postprocess(global_feature)
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return SelaShrunkTorchBackend(*args, **kwargs)

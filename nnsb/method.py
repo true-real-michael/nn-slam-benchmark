@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 
 import torch
 
+from nnsb.backend import Backend
 from nnsb.backend.torch import TorchBackend
 
 
@@ -26,17 +27,19 @@ class Method(ABC):
     Base class for all methods.
     """
 
-    def __init__(self):
+    def __init__(self, backend: Backend):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.backend = backend
 
-    @staticmethod
-    @abstractmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
+    def get_torch_backend(self) -> TorchBackend:
         """
         Return the torch backend for the method.
         To be implemented by specific methods.
         """
-        raise NotImplementedError
+        if isinstance(self.backend, TorchBackend):
+            return self.backend
+        else:
+            raise NotImplementedError
 
     @abstractmethod
     def get_sample_input(self) -> torch.Tensor:

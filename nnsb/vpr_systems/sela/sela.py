@@ -50,11 +50,6 @@ class Sela(VPRSystem, OnnxExportable, TorchScriptExportable):
         :param path_to_state_dict: Path to the SelaVPR weights
         :param dinov2_path: Path to the DINOv2 (ViT-L/14) foundation model
         """
-        super().__init__(224)
-        self.backend = backend or self.get_torch_backend(
-            path_to_state_dict, dinov2_path
+        super().__init__(
+            backend or SelaTorchBackend(path_to_state_dict, dinov2_path), 224
         )
-
-    @staticmethod
-    def get_torch_backend(*args, **kwargs) -> TorchBackend:
-        return SelaTorchBackend(*args, **kwargs)
