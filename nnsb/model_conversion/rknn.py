@@ -20,8 +20,12 @@ from nnsb.model_conversion.torchscript import TorchScriptExportable
 
 
 class RknnExportable(TorchScriptExportable, OnnxExportable):
-    def export_rknn(self, output: Path, intermediate_format: Literal["torchscript", "onnx"] = "torchscript",
-                    quantization_dataset: Optional[Path] = None):
+    def export_rknn(
+        self,
+        output: Path,
+        intermediate_format: Literal["torchscript", "onnx"] = "torchscript",
+        quantization_dataset: Optional[Path] = None,
+    ):
         """
         Export the model to the RKNN format.
         :param output: The path to save the model
@@ -31,7 +35,9 @@ class RknnExportable(TorchScriptExportable, OnnxExportable):
         try:
             from rknn.api import RKNN
         except ImportError:
-            raise ImportError("RKNN API is not installed. Please install it to use RKNN export.")
+            raise ImportError(
+                "RKNN API is not installed. Please install it to use RKNN export."
+            )
 
         suffix = ".onnx" if intermediate_format == "onnx" else ".pt"
 

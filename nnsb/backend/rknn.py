@@ -14,6 +14,7 @@
 from pathlib import Path
 
 from rknnlite.api import RKNNLite
+import torch
 
 from nnsb.backend import Backend
 
@@ -33,4 +34,8 @@ class RknnBackend(Backend):
         self.rknn.release()
 
     def __call__(self, x):
-        return self.rknn.inference([x])[0][0, :]
+        x = x.numpy()
+        x = self.rknn.inference([x])
+        x = x[0][0, :]
+        x = torch.tensor(x)
+        return x

@@ -43,7 +43,6 @@ class VPRSystem(Method, ABC):
         :param x: Image in the OpenCV format
         :return: Descriptor of the image
         """
-        breakpoint()
         x = self.preprocess(x)
         x = self.backend(x)
         return self.postprocess(x)
