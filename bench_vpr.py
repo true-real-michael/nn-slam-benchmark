@@ -16,13 +16,17 @@ import json
 import sys
 import subprocess
 import argparse
+import csv
 from collections import defaultdict
 from pathlib import Path
 
 from nnsb.benchmarking import benchmark_vpr_system
 from nnsb.dataset import Queries
-from nnsb.backend.torchscript import TorchscriptBackend
-from nnsb.backend.tensorrt import TensorRTBackend
+from nnsb.backend.rknn import RknnBackend
+try:
+    from nnsb.backend.tensorrt import TensorRTBackend
+except ImportError:
+    pass
 from nnsb.vpr_systems.cosplace.cosplace import CosPlace
 from nnsb.vpr_systems.eigenplaces.eigenplaces import EigenPlaces
 from nnsb.vpr_systems.netvlad.netvlad import NetVLAD
@@ -32,48 +36,162 @@ from nnsb.vpr_systems.sela.sela import Sela
 
 LIMIT = 10
 
-def run_single_benchmark(dataset, resize, system, quantized=False):
+def run_single_benchmark(dataset, resize, system, quantized=False, backend=None, output_csv=None, board="orin25"):
     """Run a single benchmark in a subprocess and return the results"""
     cmd = [
         sys.executable, 
         __file__, 
         "--dataset", dataset, 
         "--resize", str(resize), 
-        "--system", system
+        "--system", system,
+        "--board", board,
+        "--output-csv", output_csv
     ]
     if quantized:
         cmd.append("--quantized")
+    if backend:
+        cmd.append(f"--backend={backend}")
     
     print("calling", " ".join(cmd))
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"Error running benchmark for {system}_{resize}{'' if not quantized else '_q'}")
+        print(f"Error running benchmark for {system}_{resize}{'' if not quantized else '_q'}{f'_{backend}' if backend else ''}")
         print(result.stderr)
         return None
     
-    try:
-        last_line = result.stdout.splitlines()[-1]
-        return json.loads(last_line)
-    except json.JSONDecodeError:
-        breakpoint()
-        print(last_line)
-        print(f"Error parsing benchmark results for {system}_{resize}{'' if not quantized else '_q'}")
-        return None
+    return {"status": "complete"}
 
-def run_single_system(dataset, resize, system, quantized):
+def append_results_to_csv(csv_path, model_name, resize, metrics, quantized=False, backend=None, dataset="st_lucia", board="orin25"):
+    """Append benchmark results to a CSV file"""
+    csv_path = Path(csv_path)
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    file_exists = csv_path.exists()
+    
+    model_id = f"{model_name}_{resize}"
+    if quantized:
+        model_id += "_q"
+    if backend:
+        model_id += f"_{backend}"
+    
+    row_data = {
+        'model': model_name,
+        'resize': resize,
+        'quantized': str(quantized).lower(),
+        'backend': backend if backend else "torch",
+        'dataset': dataset,
+        'board': board,
+        'model_id': model_id
+    }
+    
+    if metrics:
+        for key, value in metrics.items():
+            row_data[key] = value
+    
+    with open(csv_path, 'a', newline='') as f:
+        fieldnames = ['model', 'resize', 'quantized', 'backend', 'dataset', 'board', 'model_id',
+                      'avg_descriptor_time', 'max_descriptor_time', 'min_descriptor_time',
+                      'p99_descriptor_time', 'p95_descriptor_time', 'p90_descriptor_time',
+                      'avg_preprocess_time', 'max_preprocess_time', 'min_preprocess_time',
+                      'p99_preprocess_time', 'p95_preprocess_time', 'p90_preprocess_time',
+                      'avg_postprocess_time', 'max_postprocess_time', 'min_postprocess_time', 
+                      'p99_postprocess_time', 'p95_postprocess_time', 'p90_postprocess_time',
+                      'total_descriptor_time', 'total_preprocess_time', 'total_postprocess_time',
+                      'total_time']
+        
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        
+        if not file_exists:
+            writer.writeheader()
+            
+        writer.writerow(row_data)
+        
+    print(f"Results for {model_id} appended to {csv_path}")
+
+def run_single_system(dataset, resize, system, quantized, backend, output_csv, board):
     """Function to run a single benchmark directly"""
     queries = Queries(Path("datasets"), dataset, knn=None, limit=LIMIT)
     result = {}
     
-    if system == "netvlad":
-        if quantized:
-            trt_path = Path(f"weights/quant/{resize}/netvlad.trt")
+    if backend == "rknn":
+        rknn_dir = "weights/rknn_q" if quantized else "weights/rknn"
+        rknn_path = Path(f"{rknn_dir}/{system}_{resize}.rknn")
+        if not rknn_path.exists():
+            print(f"Error: RKNN model not found at {rknn_path}")
+            return {}
+        
+        if system == "netvlad":
+            result = benchmark_vpr_system(
+                queries,
+                NetVLAD(backend=RknnBackend(rknn_path), resize=resize)
+            )
+        elif system == "eigenplaces":
+            result = benchmark_vpr_system(
+                queries,
+                EigenPlaces(backend=RknnBackend(rknn_path), resize=resize)
+            )
+        elif system == "cosplace":
+            result = benchmark_vpr_system(
+                queries,
+                CosPlace(backend=RknnBackend(rknn_path), resize=resize)
+            )
+        elif system == "salad":
+            adjusted_resize = resize // 14 * 14
+            result = benchmark_vpr_system(
+                queries,
+                SALAD(backend=RknnBackend(rknn_path), resize=adjusted_resize)
+            )
+        elif system == "mixvpr":
+            result = benchmark_vpr_system(
+                queries,
+                MixVPR(backend=RknnBackend(rknn_path))
+            )
+        elif system == "sela":
+            result = benchmark_vpr_system(
+                queries,
+                Sela(backend=RknnBackend(rknn_path))
+            )
+    elif quantized:
+        trt_path = Path(f"weights/quant/{resize}/{system}.trt")
+        if system == "netvlad":
             if trt_path.exists():
                 result = benchmark_vpr_system(
                     queries,
                     NetVLAD(backend=TensorRTBackend(trt_path), resize=resize)
                 )
-        else:
+        elif system == "eigenplaces":
+            if trt_path.exists():
+                result = benchmark_vpr_system(
+                    queries,
+                    EigenPlaces(backend=TensorRTBackend(trt_path), resize=resize)
+                )
+        elif system == "cosplace":
+            if trt_path.exists():
+                result = benchmark_vpr_system(
+                    queries,
+                    CosPlace(backend=TensorRTBackend(trt_path), resize=resize)
+                )
+        elif system == "salad":
+            adjusted_resize = resize // 14 * 14
+            if trt_path.exists():
+                result = benchmark_vpr_system(
+                    queries,
+                    SALAD(backend=TensorRTBackend(trt_path), resize=adjusted_resize)
+                )
+        elif system == "mixvpr":
+            if trt_path.exists():
+                result = benchmark_vpr_system(
+                    queries,
+                    MixVPR(backend=TensorRTBackend(trt_path))
+                )
+        elif system == "sela":
+            if trt_path.exists():
+                result = benchmark_vpr_system(
+                    queries,
+                    Sela(backend=TensorRTBackend(trt_path))
+                )
+    else:
+        if system == "netvlad":
             result = benchmark_vpr_system(
                 queries,
                 NetVLAD(
@@ -81,68 +199,28 @@ def run_single_system(dataset, resize, system, quantized):
                     resize=resize,
                 )
             )
-    elif system == "eigenplaces":
-        if quantized:
-            trt_path = Path(f"weights/quant/{resize}/eigenplaces.trt")
-            if trt_path.exists():
-                result = benchmark_vpr_system(
-                    queries,
-                    EigenPlaces(backend=TensorRTBackend(trt_path), resize=resize)
-                )
-        else:
+        elif system == "eigenplaces":
             result = benchmark_vpr_system(
                 queries,
                 EigenPlaces(resize=resize)
             )
-    elif system == "cosplace":
-        if quantized:
-            trt_path = Path(f"weights/quant/{resize}/cosplace.trt")
-            if trt_path.exists():
-                result = benchmark_vpr_system(
-                    queries,
-                    CosPlace(backend=TensorRTBackend(trt_path), resize=resize)
-                )
-        else:
+        elif system == "cosplace":
             result = benchmark_vpr_system(
                 queries,
                 CosPlace(resize=resize)
             )
-    elif system == "salad":
-        adjusted_resize = resize // 14 * 14  # Ensure divisible by 14
-        if quantized:
-            trt_path = Path(f"weights/quant/{resize}/salad.trt")
-            if trt_path.exists():
-                result = benchmark_vpr_system(
-                    queries,
-                    SALAD(backend=TensorRTBackend(trt_path), resize=adjusted_resize)
-                )
-        else:
+        elif system == "salad":
+            adjusted_resize = resize // 14 * 14
             result = benchmark_vpr_system(
                 queries,
                 SALAD(resize=adjusted_resize)
             )
-    elif system == "mixvpr":
-        if quantized:
-            trt_path = Path(f"weights/quant/{resize}/mixvpr.trt")
-            if trt_path.exists():
-                result = benchmark_vpr_system(
-                    queries,
-                    MixVPR(backend=TensorRTBackend(trt_path))
-                )
-        else:
+        elif system == "mixvpr":
             result = benchmark_vpr_system(
                 queries,
                 MixVPR(ckpt_path="weights/resnet50_MixVPR_4096_channels(1024)_rows(4).ckpt")
             )
-    elif system == "sela":
-        if quantized:
-            trt_path = Path(f"weights/quant/{resize}/sela.trt")
-            if trt_path.exists():
-                result = benchmark_vpr_system(
-                    queries,
-                    Sela(backend=TensorRTBackend(trt_path))
-                )
-        else:
+        elif system == "sela":
             result = benchmark_vpr_system(
                 queries,
                 Sela(
@@ -152,6 +230,19 @@ def run_single_system(dataset, resize, system, quantized):
             )
 
     print(json.dumps(result))
+    
+    if output_csv and result:
+        append_results_to_csv(
+            output_csv, 
+            system, 
+            resize, 
+            result, 
+            quantized=quantized, 
+            backend=backend,
+            dataset=dataset,
+            board=board
+        )
+        
     return result
 
 def main():
@@ -161,21 +252,31 @@ def main():
     parser.add_argument("--resize", type=int, help="Single resize value")
     parser.add_argument("--system", type=str, help="Single system name")
     parser.add_argument("--quantized", action="store_true", help="Run quantized model")
+    parser.add_argument("--backend", type=str, choices=["tensorrt", "rknn"], 
+                        help="Backend to use (tensorrt or rknn)")
+    parser.add_argument("--output-csv", type=str, help="CSV file to append results to")
     args = parser.parse_args()
 
-    # If both resize and system are specified, run a single benchmark directly
+    if not args.output_csv:
+        backend_suffix = f"_{args.backend}" if args.backend else ""
+        args.output_csv = f"measurements/orin_quant/{args.dataset}_vpr_{args.board}{backend_suffix}.csv"
+
     if args.resize is not None and args.system is not None:
-        run_single_system(args.dataset, args.resize, args.system, args.quantized)
+        run_single_system(
+            args.dataset, 
+            args.resize, 
+            args.system, 
+            args.quantized, 
+            args.backend,
+            args.output_csv,
+            args.board
+        )
         return
 
-    # Otherwise, run all benchmarks in subprocesses
-    measurements = defaultdict(dict)
     systems = ["netvlad", "eigenplaces", "cosplace", "salad", "mixvpr", "sela"]
     resize_values = [800, 600, 400, 300, 200]
     
-    # Special case for MixVPR (only resize 300)
     mixvpr_resize = [300]
-    # Special case for Sela (only resize 200)
     sela_resize = [200]
 
     for system in systems:
@@ -187,22 +288,36 @@ def main():
             resizes_to_use = resize_values
             
         for resize in resizes_to_use:
-            # Run non-quantized version
-            result = run_single_benchmark(args.dataset, resize, system)
-            if result:
-                measurements[f'{system}_{resize}'] = result
+            run_single_benchmark(
+                args.dataset, resize, system, 
+                output_csv=args.output_csv, 
+                board=args.board
+            )
             
-            # Run quantized version
-            result = run_single_benchmark(args.dataset, resize, system, quantized=True)
-            if result:
-                measurements[f'{system}_{resize}_q'] = result
+            run_single_benchmark(
+                args.dataset, resize, system, 
+                quantized=True,
+                output_csv=args.output_csv, 
+                board=args.board
+            )
+                
+            if args.backend == "rknn" or args.backend is None:
+                run_single_benchmark(
+                    args.dataset, resize, system, 
+                    backend="rknn",
+                    output_csv=args.output_csv, 
+                    board=args.board
+                )
+                
+                run_single_benchmark(
+                    args.dataset, resize, system, 
+                    quantized=True, 
+                    backend="rknn",
+                    output_csv=args.output_csv, 
+                    board=args.board
+                )
 
-    output_file = Path(f"measurements/orin_quant/{args.dataset}_vpr_{args.board}.json")
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, "w") as f:
-        json.dump(measurements, f)
-
-    print(json.dumps(measurements, indent=2))
+    print(f"All benchmark results written to {args.output_csv}")
 
 if __name__ == "__main__":
     main()
