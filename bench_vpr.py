@@ -12,16 +12,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import json
-import sys
-import subprocess
 import argparse
 import csv
+import json
+import subprocess
+import sys
 from pathlib import Path
 
+from nnsb.backend.rknn import RknnBackend
 from nnsb.benchmarking import benchmark_vpr_system
 from nnsb.dataset import Queries
-from nnsb.backend.rknn import RknnBackend
 
 try:
     from nnsb.backend.tensorrt import TensorRTBackend
@@ -29,9 +29,9 @@ except ImportError:
     pass
 from nnsb.vpr_systems.cosplace.cosplace import CosPlace
 from nnsb.vpr_systems.eigenplaces.eigenplaces import EigenPlaces
+from nnsb.vpr_systems.mixvpr.mixvpr import MixVPR
 from nnsb.vpr_systems.netvlad.netvlad import NetVLAD
 from nnsb.vpr_systems.salad.salad import SALAD
-from nnsb.vpr_systems.mixvpr.mixvpr import MixVPR
 from nnsb.vpr_systems.sela.sela import Sela
 
 LIMIT = 1000
@@ -123,7 +123,7 @@ def append_results_to_csv(
             "dataset",
             "board",
             "model_id",
-            "global_descs",
+            "throughput",
         ]
 
         writer = csv.DictWriter(f, fieldnames=fieldnames)
