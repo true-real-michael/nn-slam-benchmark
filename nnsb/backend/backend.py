@@ -15,10 +15,31 @@ from abc import ABC, abstractmethod
 
 
 class Backend(ABC):
+    """Abstract base class for all backends.
+
+    This class defines the interface that all backend implementations must follow.
+    A backend is responsible for executing model inference using a specific
+    framework or runtime.
+    """
+
     @abstractmethod
     def __init__(self, *args, **kwargs):
+        """Initializes the backend.
+
+        Args:
+            *args: Positional arguments for initialization.
+            **kwargs: Keyword arguments for initialization.
+        """
         pass
 
     @abstractmethod
     def __call__(self, x):
+        """Executes the model on the input data.
+
+        Args:
+            x: Input data for model inference.
+
+        Returns:
+            Model output after inference.
+        """
         pass

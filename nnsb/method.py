@@ -23,18 +23,33 @@ __all__ = ["Method"]
 
 
 class Method(ABC):
-    """
-    Base class for all methods.
+    """Base class for all methods in the benchmark.
+
+    This abstract class serves as a foundation for feature detectors,
+    feature matchers, and VPR systems.
+
+    Attributes:
+        device: The device (CPU or GPU) to run inference on.
+        backend: The backend used for model execution.
     """
 
     def __init__(self, backend: Backend):
+        """Initializes the method.
+
+        Args:
+            backend: The backend to use for inference.
+        """
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.backend = backend
 
     def get_torch_backend(self) -> TorchBackend:
-        """
-        Return the torch backend for the method.
-        To be implemented by specific methods.
+        """Returns the PyTorch backend for the method.
+
+        Returns:
+            TorchBackend: The PyTorch backend.
+
+        Raises:
+            NotImplementedError: If the backend is not a TorchBackend.
         """
         if isinstance(self.backend, TorchBackend):
             return self.backend
@@ -43,8 +58,12 @@ class Method(ABC):
 
     @abstractmethod
     def get_sample_input(self) -> torch.Tensor:
-        """
-        Return a sample input for the model.
-        To be implemented by specific methods.
+        """Returns a sample input tensor for the model.
+
+        This method should be implemented by subclasses to provide
+        an appropriate sample input for their models.
+
+        Returns:
+            torch.Tensor: A sample input tensor.
         """
         pass

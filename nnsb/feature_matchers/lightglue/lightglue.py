@@ -22,7 +22,14 @@ from nnsb.feature_matchers.lightglue.model.lightglue_matcher import LightGlueMat
 
 
 class LightGlueTorchBackend(TorchBackend):
+    """TorchBackend implementation for LightGlue model.
+
+    This backend initializes and manages a LightGlue model for feature matching.
+    """
+
     def __init__(self):
+        """Initializes the LightGlue TorchBackend with a model wrapper."""
+
         class Wrapper(torch.nn.Module):
             def __init__(self):
                 super().__init__()
@@ -41,9 +48,22 @@ class LightGlue(FeatureMatcher):
     """
 
     def __init__(self, backend: Optional[Backend] = None):
+        """Initializes the LightGlue feature matcher.
+
+        Args:
+            backend: Optional backend instance. If None, creates a LightGlueTorchBackend.
+        """
         super().__init__(backend or LightGlueTorchBackend())
 
     def preprocess(self, feat):
+        """Preprocesses features for the LightGlue model.
+
+        Args:
+            feat: Feature dictionary containing keypoints, scores, descriptors.
+
+        Returns:
+            Dict with preprocessed features.
+        """
         keys = ["keypoints", "scores", "descriptors"]
         feat = {
             k: (torch.tensor(v).to(self.device) if k in keys else v)
@@ -53,11 +73,26 @@ class LightGlue(FeatureMatcher):
         return feat
 
     def postprocess(self, query_feat, db_feat, matches):
+        """Postprocesses LightGlue model outputs.
+
+        Args:
+            query_feat: Query features.
+            db_feat: Database features.
+            matches: Matched indices from the model.
+
+        Returns:
+            Tuple containing number of matches, matched query points, and matched database points.
+        """
         points_query = query_feat["keypoints"][0][matches[..., 0]].cpu().numpy()
         points_db = db_feat["keypoints"][0][matches[..., 1]].cpu().numpy()
         return len(points_query), points_query, points_db
 
     def get_sample_input(self):
+        """Provides a sample input for the model.
+
+        Returns:
+            Dict with sample features.
+        """
         return {
             "keypoints": torch.randint(0, 200, (1, 100, 2)),
             "descriptors": torch.rand((1, 256, 100)),

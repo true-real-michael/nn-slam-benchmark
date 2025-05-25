@@ -21,9 +21,30 @@ from nnsb.backend.backend import Backend
 
 
 class TensorRTBackend(Backend):
+    """Backend for TensorRT models.
+
+    This backend executes models optimized with NVIDIA TensorRT for
+    high-performance inference on NVIDIA GPUs.
+
+    Attributes:
+        device: The device to run inference on.
+        input_bindings: Dictionary of input tensor bindings.
+        output_bindings: Dictionary of output tensor bindings.
+        context: The TensorRT execution context.
+    """
+
     def __init__(
         self, model_path: Path, input_tensors=1, output_tensors=1, *args, **kwargs
     ):
+        """Initializes the TensorRT backend.
+
+        Args:
+            model_path: Path to the TensorRT engine file.
+            input_tensors: Number of input tensors (default: 1).
+            output_tensors: Number of output tensors (default: 1).
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+        """
         self.device = torch.device("cuda")
         Binding = namedtuple("Binding", ("name", "dtype", "shape", "data", "ptr"))
         self.logger = trt.Logger(trt.Logger.INFO)
@@ -58,6 +79,15 @@ class TensorRTBackend(Backend):
         self.context = model.create_execution_context()
 
     def __call__(self, x):
+        """Runs inference using the TensorRT model.
+
+        Args:
+            x: Input tensor for inference.
+
+        Returns:
+            The model's output(s) after inference. If there's only one output,
+            returns that output directly; otherwise, returns a list of outputs.
+        """
         x = x.to(self.device)
         self.input_binding_addrs["images"] = x.data_ptr()
         self.context.execute_v2(list(self.input_binding_addrs.values()))

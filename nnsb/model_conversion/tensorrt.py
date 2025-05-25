@@ -21,18 +21,26 @@ CALIBRATION_DATASET_N_BATCHES = 16
 
 
 class TensorRTExportable(Method):
+    """Mixin class for models that can be exported to TensorRT format.
+    
+    This class provides functionality to quantize and export models to ONNX
+    format suitable for TensorRT conversion.
+    """
+    
     def quantize_to_onnx(self, calibration_data_dir, calibration_data_name, onnx_path, resize):
-        """
-        Quantize model and export to ONNX.
+        """Quantize model and export to ONNX for TensorRT conversion.
+        
+        This method applies quantization to the model using a calibration dataset
+        and exports it to ONNX format, optimized for TensorRT.
 
         Args:
-            calibration_data_dir: Dataset directory for calibration
-            calibration_data_name: Name of the dataset for calibration
-            onnx_path: Path to save the ONNX model
-            resize: Image resize value
+            calibration_data_dir: Directory containing calibration dataset.
+            calibration_data_name: Name of the calibration dataset.
+            onnx_path: Path where the quantized ONNX model will be saved.
+            resize: Image resize value for the input.
 
         Returns:
-            bool: True if quantization was successful, False otherwise
+            bool: True if quantization was successful, False otherwise.
         """
         try:
             from pytorch_quantization import nn as quant_nn

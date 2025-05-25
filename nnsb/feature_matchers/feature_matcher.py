@@ -17,15 +17,49 @@ from nnsb.method import Method
 
 
 class FeatureMatcher(Method, ABC):
+    """Base class for all feature matchers.
+
+    This abstract class defines the interface for feature matchers, which
+    match features between a query image and a database image.
+    """
+
     def __call__(self, query_feat, db_feat):
+        """Runs the feature matching pipeline.
+
+        Args:
+            query_feat: Features from the query image.
+            db_feat: Features from the database image.
+
+        Returns:
+            Matching results, typically containing the number of matches
+            and corresponding points.
+        """
         query_feat = self.preprocess(query_feat)
         db_feat = self.preprocess(db_feat)
         matches = self.backend((query_feat, db_feat))
         return self.postprocess(query_feat, db_feat, matches)
 
     def preprocess(self, feat):
+        """Preprocesses features for matching.
+
+        Args:
+            feat: Input features to preprocess.
+
+        Returns:
+            Preprocessed features.
+        """
         return feat
 
     @abstractmethod
     def postprocess(self, query_feat, db_feat, matches):
+        """Postprocesses the matcher output.
+
+        Args:
+            query_feat: Features from the query image.
+            db_feat: Features from the database image.
+            matches: Raw matching results from the backend.
+
+        Returns:
+            Processed matching results.
+        """
         pass

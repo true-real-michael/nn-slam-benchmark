@@ -19,7 +19,18 @@ from nnsb.method import Method
 
 
 class OnnxExportable(Method):
+    """Mixin class for models that can be exported to ONNX format.
+    
+    This class provides functionality to export models to the ONNX format,
+    which enables interoperability with other deep learning frameworks.
+    """
+    
     def do_export_onnx(self, output: Path):
+        """Performs the actual ONNX export operation.
+        
+        Args:
+            output: Path where the ONNX model will be saved.
+        """
         torch.onnx.export(
             self.get_torch_backend().get_torch_module().cpu(),
             (self.get_sample_input(),),
@@ -27,9 +38,10 @@ class OnnxExportable(Method):
         )
 
     def export_onnx(self, output: Path):
-        """
-        Export the model to the ONNX format.
-        :param output: The path to save the model
+        """Exports the model to the ONNX format.
+        
+        Args:
+            output: Path where the ONNX model will be saved.
         """
         output.parent.mkdir(exist_ok=True, parents=True)
         self.do_export_onnx(output)

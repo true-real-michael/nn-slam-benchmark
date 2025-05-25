@@ -21,10 +21,28 @@ from PIL import Image
 
 
 def path_to_pil_img(path):
+    """Convert a file path to a PIL image.
+
+    Args:
+        path: Path to the image file.
+
+    Returns:
+        PIL.Image: Loaded image in RGB format.
+    """
     return Image.open(path).convert("RGB")
 
 
 class BaseDataset(torch.utils.data.Dataset):
+    """Base dataset class for image loading and preprocessing.
+
+    This class provides functionality for loading images from a directory
+    and applying transformations.
+
+    Attributes:
+        transform: Composition of image transformations.
+        images_paths: List of paths to image files.
+    """
+
     def __init__(
         self,
         images_dir: Path,
@@ -32,6 +50,17 @@ class BaseDataset(torch.utils.data.Dataset):
         limit=None,
         superpoint=False,
     ):
+        """Initializes the BaseDataset.
+
+        Args:
+            images_dir: Directory containing image files.
+            resize: Image size after resizing (default: 224).
+            limit: Maximum number of images to load (default: None).
+            superpoint: If True, uses transformations suitable for SuperPoint (default: False).
+
+        Raises:
+            FileNotFoundError: If the images directory doesn't exist.
+        """
         super().__init__()
         if not images_dir.exists():
             raise FileNotFoundError(f"Images folder {images_dir} not found.")
@@ -64,6 +93,14 @@ class BaseDataset(torch.utils.data.Dataset):
             self.images_paths = self.images_paths[:limit]
 
     def __getitem__(self, index):
+        """Get image and its geolocation at the specified index.
+
+        Args:
+            index: Index of the image to retrieve.
+
+        Returns:
+            Tuple containing the transformed image and its (latitude, longitude).
+        """
         img = path_to_pil_img(self.images_paths[index])
         img = self.transform(img)
         latitude = float(self.images_paths[index].stem.split("@")[1])
@@ -71,10 +108,16 @@ class BaseDataset(torch.utils.data.Dataset):
         return img, (latitude, longitude)
 
     def __len__(self):
+        """Returns the number of images in the dataset."""
         return len(self.images_paths)
 
 
 class Data(BaseDataset):
+    """Dataset class for database images.
+
+    This class loads images from the database subset of a dataset.
+    """
+
     def __init__(
         self,
         dataset_dir: Path,
@@ -83,6 +126,15 @@ class Data(BaseDataset):
         limit=None,
         superpoint=False,
     ):
+        """Initializes the Data dataset.
+
+        Args:
+            dataset_dir: Root directory of datasets.
+            dataset_name: Name of the specific dataset.
+            resize: Image size after resizing (default: 224).
+            limit: Maximum number of images to load (default: None).
+            superpoint: If True, uses transformations suitable for SuperPoint (default: False).
+        """
         super().__init__(
             dataset_dir / dataset_name / "images/test/database",
             resize,
@@ -91,6 +143,14 @@ class Data(BaseDataset):
         )
 
     def get_knn(self, k_neighbors=5):
+        """Creates a k-nearest neighbor model from database coordinates.
+
+        Args:
+            k_neighbors: Number of neighbors to consider (default: 5).
+
+        Returns:
+            sklearn.neighbors.NearestNeighbors: Trained KNN model.
+        """
         from sklearn.neighbors import NearestNeighbors
 
         database_utms = np.array(
@@ -105,6 +165,17 @@ class Data(BaseDataset):
 
 
 class Queries(BaseDataset):
+    """Dataset class for query images.
+
+    This class loads images from the queries subset of a dataset and
+    can compute positive matches based on geolocation.
+
+    Attributes:
+        knn: Nearest neighbor model for finding positive matches.
+        queries_utms: Array of query coordinates.
+        soft_positives_per_query: List of positive matches for each query.
+    """
+
     def __init__(
         self,
         dataset_dir: Path,
@@ -114,6 +185,16 @@ class Queries(BaseDataset):
         limit=None,
         superpoint=False,
     ):
+        """Initializes the Queries dataset.
+
+        Args:
+            dataset_dir: Root directory of datasets.
+            dataset_name: Name of the specific dataset.
+            knn: Nearest neighbor model for finding positive matches.
+            resize: Image size after resizing (default: 224).
+            limit: Maximum number of images to load (default: None).
+            superpoint: If True, uses transformations suitable for SuperPoint (default: False).
+        """
         super().__init__(
             dataset_dir / dataset_name / "images/test/queries",
             resize,
@@ -134,4 +215,9 @@ class Queries(BaseDataset):
             )
 
     def get_positives(self):
+        """Returns positive matches for each query.
+
+        Returns:
+            List of positive matches indices for each query.
+        """
         return self.soft_positives_per_query

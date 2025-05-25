@@ -20,7 +20,24 @@ from nnsb.backend import Backend
 
 
 class RknnBackend(Backend):
+    """Backend for RKNN models.
+
+    This backend executes models optimized for Rockchip Neural Network
+    processors using the RKNN Lite runtime.
+
+    Attributes:
+        rknn: The RKNNLite runtime instance.
+    """
+
     def __init__(self, model_path: Path):
+        """Initializes the RKNN backend.
+
+        Args:
+            model_path: Path to the RKNN model file.
+
+        Raises:
+            ValueError: If model loading or runtime initialization fails.
+        """
         super().__init__()
         self.rknn = RKNNLite()
         ret = self.rknn.load_rknn(model_path.as_posix())
@@ -31,9 +48,18 @@ class RknnBackend(Backend):
             raise ValueError("Failed to init runtime")
 
     def __del__(self):
+        """Releases RKNN resources when the object is destroyed."""
         self.rknn.release()
 
     def __call__(self, x):
+        """Runs inference using the RKNN model.
+
+        Args:
+            x: Input tensor for inference.
+
+        Returns:
+            torch.Tensor: The model's output after inference.
+        """
         x = x.numpy()
         x = self.rknn.inference([x])
         x = x[0][0, :]

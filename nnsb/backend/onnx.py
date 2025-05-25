@@ -18,12 +18,36 @@ from nnsb.backend.backend import Backend
 
 
 class OnnxBackend(Backend):
+    """Backend that uses ONNX Runtime to run the model.
+
+    This backend executes models converted to ONNX format using ONNX Runtime.
+    It supports both CPU and CUDA execution providers.
+
+    Attributes:
+        session: The ONNX Runtime inference session.
+    """
+
     def __init__(self, model_path: Path, *args, **kwargs):
+        """Initializes the ONNX backend.
+
+        Args:
+            model_path: Path to the ONNX model file.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+        """
         self.session = InferenceSession(
             model_path, providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
         )
 
     def __call__(self, x):
+        """Runs inference using the ONNX model.
+
+        Args:
+            x: Input tensor for inference.
+
+        Returns:
+            The model's output after inference.
+        """
         x = x.cpu().numpy()
         x = self.session.run(None, {"input.1": x})
         return x

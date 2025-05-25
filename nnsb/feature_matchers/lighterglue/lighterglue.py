@@ -21,7 +21,14 @@ from nnsb.feature_matchers.feature_matcher import FeatureMatcher
 
 
 class LighterGlueTorchBackend(TorchBackend):
+    """TorchBackend implementation for LighterGlue model.
+
+    This backend initializes and manages a LighterGlue model for feature matching.
+    """
+
     def __init__(self):
+        """Initializes the LighterGlue TorchBackend with a model wrapper."""
+
         class Wrapper(torch.nn.Module):
             def __init__(self, model):
                 super().__init__()
@@ -37,10 +44,28 @@ class LighterGlueTorchBackend(TorchBackend):
 
 
 class LighterGlue(FeatureMatcher):
+    """LighterGlue feature matcher implementation.
+
+    A lightweight feature matcher optimized for speed.
+    """
+
     def __init__(self, backend: Optional[Backend] = None):
+        """Initializes the LighterGlue feature matcher.
+
+        Args:
+            backend: Optional backend instance. If None, creates a LighterGlueTorchBackend.
+        """
         super().__init__(backend or LighterGlueTorchBackend())
 
     def preprocess(self, features):
+        """Preprocesses features for the LighterGlue model.
+
+        Args:
+            features: Feature dictionary containing keypoints, scores, descriptors.
+
+        Returns:
+            Dict with preprocessed features.
+        """
         keys = ["keypoints", "scores", "descriptors", "image_size"]
         features = {
             k: (torch.tensor(v).to(self.device) if k in keys else v)
@@ -49,11 +74,26 @@ class LighterGlue(FeatureMatcher):
         return features
 
     def postprocess(self, query_feat, db_feat, matches):
+        """Postprocesses LighterGlue model outputs.
+
+        Args:
+            query_feat: Query features.
+            db_feat: Database features.
+            matches: Matched indices from the model.
+
+        Returns:
+            Tuple containing number of matches, matched query points, and matched database points.
+        """
         points_query = query_feat["keypoints"][matches[..., 0]].cpu().numpy()
         points_db = db_feat["keypoints"][matches[..., 1]].cpu().numpy()
         return len(points_query), points_query, points_db
 
     def get_sample_input(self):
+        """Provides a sample input for the model.
+
+        Returns:
+            Dict with sample features.
+        """
         return {
             "keypoints": torch.randint(0, 200, (1, 100, 2)),
             "descriptors": torch.rand((1, 256, 100)),

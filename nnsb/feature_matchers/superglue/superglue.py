@@ -56,12 +56,26 @@ from nnsb.feature_matchers.superglue.model.superglue_matcher import SuperGlueMat
 
 
 class SuperGlueTorchBackend(TorchBackend):
+    """TorchBackend implementation for SuperGlue model.
+
+    This backend initializes and manages a SuperGlue model for feature matching.
+
+    Attributes:
+        model: The SuperGlue model.
+    """
+
     def __init__(self, path_to_sg_weights):
+        """Initializes the SuperGlue TorchBackend.
+
+        Args:
+            path_to_sg_weights: Path to the SuperGlue weights.
+        """
         super().__init__(SuperGlueMatcher(path_to_sg_weights))
 
 
 class SuperGlue(FeatureMatcher):
-    """
+    """SuperGlue feature matcher implementation.
+
     Implementation of [SuperGlue](https://github.com/magicleap/SuperGluePretrainedNetwork)
     matcher with SuperPoint extractor.
     """
@@ -71,13 +85,24 @@ class SuperGlue(FeatureMatcher):
         path_to_sg_weights: Optional[Path] = None,
         backend: Optional[Backend] = None,
     ):
-        """
-        :param path_to_sg_weights: Path to SuperGlue weights
-        :param resize: The size to which the larger side of the image will be reduced while maintaining the aspect ratio
+        """Initializes the SuperGlue feature matcher.
+
+        Args:
+            path_to_sg_weights: Path to SuperGlue weights.
+            backend: Optional backend instance. If None, creates a SuperGlueTorchBackend.
         """
         super().__init__(backend or SuperGlueTorchBackend(path_to_sg_weights))
 
     def __call__(self, query_feat, db_feat):
+        """Process features with the SuperGlue matcher.
+
+        Args:
+            query_feat: Dictionary containing query features.
+            db_feat: Dictionary containing database features.
+
+        Returns:
+            Tuple containing number of matches, matched query points, and matched database points.
+        """
         keys = ["keypoints", "scores", "descriptors"]
         pred = {"shape0": query_feat["image_size"], "shape1": db_feat["image_size"]}
         pred |= {k + "0": query_feat[k].to(self.device) for k in keys}
@@ -86,6 +111,16 @@ class SuperGlue(FeatureMatcher):
         return self.postprocess(query_feat, db_feat, pred)
 
     def postprocess(self, query_feat, db_feat, matches):
+        """Postprocesses SuperGlue model outputs.
+
+        Args:
+            query_feat: Query features.
+            db_feat: Database features.
+            matches: Matched indices from the model.
+
+        Returns:
+            Tuple containing number of matches, matched query points, and matched database points.
+        """
         matches = matches["matches0"][0].cpu().numpy()
         valid = matches > -1
         matched_kpts_query = query_feat["keypoints"][0][valid]
@@ -99,6 +134,11 @@ class SuperGlue(FeatureMatcher):
         )
 
     def get_sample_input(self):
+        """Provides a sample input for the model.
+
+        Returns:
+            Dict with sample features.
+        """
         features = {
             "keypoints0": torch.randint(0, 200, (1, 74, 2)),
             "keypoints1": torch.randint(0, 200, (1, 81, 2)),

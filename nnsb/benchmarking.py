@@ -32,13 +32,16 @@ def benchmark_vpr_system(
     queries: Queries,
     vpr_system: VPRSystem,
 ) -> Dict[str, float]:
-    """
-    Benchmark VPR systems with given dataset and queries
+    """Benchmarks a VPR system.
 
-    :param queries: Queries object
-    :param vpr_systems: VPR system
+    This function measures the throughput of a VPR system on a set of queries.
 
-    :return: Dictionary with time measurements
+    Args:
+        queries: Queries object containing the test images.
+        vpr_system: VPR system to benchmark.
+
+    Returns:
+        Dict mapping metric names to values (currently just "throughput").
     """
     time_measurements = {}
 
@@ -53,6 +56,20 @@ def benchmark_vpr_system(
 def benchmark_feature_detector(
     queries: Queries, feature_detector
 ) -> Tuple[Dict[str, float], List[Any]]:
+    """Benchmarks a feature detector.
+
+    This function measures the throughput of a feature detector on a set of queries
+    and returns the extracted features.
+
+    Args:
+        queries: Queries object containing the test images.
+        feature_detector: Feature detector to benchmark.
+
+    Returns:
+        Tuple containing:
+        - Dict mapping metric names to values (currently just "throughput").
+        - List of extracted features for each query.
+    """
     time_measurements = {}
     features = []
 
@@ -70,14 +87,19 @@ def benchmark_feature_matcher(
     feature_matcher: FeatureMatcher,
     k_closest: int = 10,
 ) -> Dict[str, float]:
-    """
-    Benchmark feature matchers with given dataset and queries
+    """Benchmarks a feature matcher.
 
-    :param queries: Queries object
-    :param feature_matchers: List of feature matchers
-    :param k_closest: Number of closest images to return
+    This function measures the throughput of a feature matcher on pairs of query
+    and database features.
 
-    :return: Dictionary with time measurements
+    Args:
+        data_local_features: List of database features.
+        query_local_features: List of query features.
+        feature_matcher: Feature matcher to benchmark.
+        k_closest: Number of database features to sample for each query (default: 10).
+
+    Returns:
+        Dict mapping metric names to values (currently just "throughput").
     """
     time_measurements = {}
 

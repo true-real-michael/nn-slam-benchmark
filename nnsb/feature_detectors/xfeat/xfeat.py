@@ -21,7 +21,14 @@ from nnsb.feature_detectors.feature_detector import FeatureDetector
 
 
 class XFeatTorchBackend(TorchBackend):
+    """TorchBackend implementation for XFeat model.
+
+    This backend initializes and manages an XFeat model for feature detection.
+    """
+
     def __init__(self):
+        """Initializes the XFeat TorchBackend with a model wrapper."""
+
         class Wrapper(torch.nn.Module):
             def __init__(self, model):
                 super().__init__()
@@ -37,10 +44,29 @@ class XFeatTorchBackend(TorchBackend):
 
 
 class XFeat(FeatureDetector):
+    """XFeat feature detector implementation.
+
+    XFeat is an accelerated feature extractor providing high-quality keypoints and descriptors.
+    """
+
     def __init__(self, resize, backend: Optional[Backend] = None):
+        """Initializes the XFeat feature detector.
+
+        Args:
+            resize: The image size to resize inputs to.
+            backend: Optional backend instance. If None, creates an XFeatTorchBackend.
+        """
         super().__init__(backend or XFeatTorchBackend(), resize)
 
     def postprocess(self, x):
+        """Postprocesses XFeat model output.
+
+        Args:
+            x: Model output.
+
+        Returns:
+            Dict with added image size information.
+        """
         x["image_size"] = (
             torch.tensor((self.resize, self.resize)).to(self.device).float()
         )

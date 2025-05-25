@@ -18,17 +18,40 @@ from nnsb.backend.backend import Backend
 
 
 class TorchBackend(Backend, ABC):
+    """Backend for PyTorch models.
+
+    This backend executes models using the PyTorch framework.
+
+    Attributes:
+        device: The device to run inference on (CPU or CUDA).
+        model: The PyTorch model to execute.
+    """
+
     def __init__(self, model: torch.nn.Module):
+        """Initializes the PyTorch backend.
+
+        Args:
+            model: The PyTorch model to use for inference.
+        """
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = model.eval().to(self.device)
 
     def __call__(self, x):
+        """Runs the model on the input data.
+
+        Args:
+            x: Input data for model inference.
+
+        Returns:
+            The model's output after inference.
+        """
         with torch.no_grad():
             return self.model(x)
 
     def get_torch_module(self) -> torch.nn.Module:
-        """
-        Returns the torch module of the backend.
-        This method should be implemented by subclasses.
+        """Returns the torch module of the backend.
+
+        Returns:
+            torch.nn.Module: The PyTorch model.
         """
         return self.model
