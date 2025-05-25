@@ -87,8 +87,6 @@ def benchmark_feature_matcher(
     for query_features in tqdm(query_local_features, desc="Matching"):
         for db_features in data_local_features:
             feature_matcher(query_features, db_features)
-    time_measurements["throughput"] = len(query_local_features) / (
-        timer() - start
-    )
+    time_measurements["throughput"] = len(query_local_features) / (timer() - start)
 
     return time_measurements
