@@ -20,14 +20,14 @@ from nnsb.method import Method
 
 class TorchScriptExportable(Method):
     """Mixin class for models that can be exported to TorchScript format.
-    
+
     This class provides functionality to export models to the TorchScript format,
     which enables deployment without Python dependencies.
     """
-    
+
     def do_export_torchscript(self, output: Path):
         """Performs the actual TorchScript export operation.
-        
+
         Args:
             output: Path where the TorchScript model will be saved.
         """
@@ -39,7 +39,7 @@ class TorchScriptExportable(Method):
 
     def export_torchscript(self, output: Path):
         """Exports the model to the TorchScript format.
-        
+
         Args:
             output: Path where the TorchScript model will be saved.
         """

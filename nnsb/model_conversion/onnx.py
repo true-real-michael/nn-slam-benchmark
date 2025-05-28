@@ -20,14 +20,14 @@ from nnsb.method import Method
 
 class OnnxExportable(Method):
     """Mixin class for models that can be exported to ONNX format.
-    
+
     This class provides functionality to export models to the ONNX format,
     which enables interoperability with other deep learning frameworks.
     """
-    
+
     def do_export_onnx(self, output: Path):
         """Performs the actual ONNX export operation.
-        
+
         Args:
             output: Path where the ONNX model will be saved.
         """
@@ -39,7 +39,7 @@ class OnnxExportable(Method):
 
     def export_onnx(self, output: Path):
         """Exports the model to the ONNX format.
-        
+
         Args:
             output: Path where the ONNX model will be saved.
         """

@@ -21,11 +21,11 @@ from nnsb.model_conversion.torchscript import TorchScriptExportable
 
 class RknnExportable(TorchScriptExportable, OnnxExportable):
     """Mixin class for models that can be exported to RKNN format.
-    
+
     This class provides functionality to export models to the RKNN format,
     which is optimized for Rockchip Neural Network processors.
     """
-    
+
     def export_rknn(
         self,
         output: Path,
@@ -33,13 +33,13 @@ class RknnExportable(TorchScriptExportable, OnnxExportable):
         quantization_dataset: Optional[Path] = None,
     ):
         """Exports the model to the RKNN format.
-        
+
         Args:
             output: Path where the RKNN model will be saved.
             intermediate_format: The format used as an intermediate step in the conversion process.
                 Can be either "torchscript" or "onnx". Default is "torchscript".
             quantization_dataset: Optional path to a dataset for quantization.
-                
+
         Raises:
             ImportError: If the RKNN API is not installed.
             RuntimeError: If model loading, building, or export fails.
