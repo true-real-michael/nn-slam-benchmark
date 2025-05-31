@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from itertools import repeat
 from random import sample
 from timeit import default_timer as timer
 from typing import Any, Dict, List, Tuple
@@ -45,6 +46,8 @@ def benchmark_vpr_system(
     """
     time_measurements = {}
 
+    for image in [queries[0]] * 30:
+        vpr_system.get_image_descriptor(image)
     start = timer()
     for image, _ in tqdm(queries, desc=" Q descriptors"):
         vpr_system.get_image_descriptor(image)
@@ -74,6 +77,8 @@ def benchmark_feature_detector(
     features = []
 
     start = timer()
+    for query in [queries[0]] * 30:
+        feature_detector(query)
     for query, _ in tqdm(queries, desc="Q features"):
         features.append(feature_detector(query))
     time_measurements["throughput"] = len(queries) / (timer() - start)
@@ -105,6 +110,11 @@ def benchmark_feature_matcher(
 
     data_local_features = sample(list(data_local_features), k_closest)
 
+    for query_features, db_features in [
+        query_local_features[0],
+        data_local_features[0],
+    ] * 30:
+        feature_matcher(query_features, db_features)
     start = timer()
     for query_features in tqdm(query_local_features, desc="Matching"):
         for db_features in data_local_features:
